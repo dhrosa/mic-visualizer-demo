@@ -1,5 +1,5 @@
 import itertools
-
+import funcy
 import numpy as np
 from PySide6 import QtGui, QtWidgets, QtCore
 from matplotlib import colors, cm
@@ -29,12 +29,9 @@ class AudioWidget(widgets.QWidget):
         self.pixmap = gui.QPixmap(self.col_count, self.row_count)
         self.pixmap.fill()
 
-        pol = widgets.QSizePolicy.Expanding
-        self.setSizePolicy(pol, pol)
-
     def sizeHint(self):
         return self.maximumSize()
-        
+
     def paintEvent(self, event):
         painter = gui.QPainter(self)
         painter.setWindow(self.pixmap.rect())
@@ -49,6 +46,12 @@ class AudioWidget(widgets.QWidget):
         norm = colors.BoundaryNorm(np.linspace(10, 34, 8), cmap.N)
         self.mapper = cm.ScalarMappable(norm, cmap)
 
+    def logical_to_device_rect(self, rect):
+        transform = gui.QTransform.fromScale(
+            self.width() / self.pixmap.width(),
+            self.height() / self.pixmap.height())
+        return transform.mapRect(rect).toAlignedRect()
+
     def append_data(self, psd):
         self.setUpdatesEnabled(False)
         painter = gui.QPainter()
@@ -61,7 +64,8 @@ class AudioWidget(widgets.QWidget):
         self.column_index %= self.col_count
         painter.end()
         self.setUpdatesEnabled(True)
-        self.update(col, 0, 1, self.row_count)
+        dirty_rect = self.logical_to_device_rect(core.QRectF(col, 0, 1, self.row_count))
+        self.update(dirty_rect)
 
 
 
@@ -74,6 +78,7 @@ class MainWindow(widgets.QMainWindow):
 
         self.init_central_widget()
         self.init_options_dock()
+        self.init_shortcuts()
 
         self.closing = False
         self.update_thread = threading.Thread(target=self.update_loop)
@@ -97,18 +102,20 @@ class MainWindow(widgets.QMainWindow):
             cmap_picker.findItems(self.audio_widget.colormap_name, Qt.MatchExactly)[0])
         cmap_picker.currentTextChanged.connect(self.audio_widget.set_colormap_name)
         options_dock.setWidget(cmap_picker)
-
         self.addDockWidget(Qt.RightDockWidgetArea, options_dock)
+
+    def init_shortcuts(self):
+        close_keys = [
+            gui.QKeySequence.Close,
+            gui.QKeySequence.Quit,
+        ]
+        for k in close_keys:
+            gui.QShortcut(k, self, self.close)
 
     def closeEvent(self, event):
         self.closing = True
         self.update_thread.join()
         event.accept()
-
-
-    def keyPressEvent(self, event):
-        if event.modifiers() == Qt.NoModifier:
-            self.close()
 
     def update_loop(self):
         stream = self.audio_stream.psd_stream()
