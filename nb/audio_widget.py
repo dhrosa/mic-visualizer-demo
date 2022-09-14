@@ -16,13 +16,9 @@ class AudioWidget(widgets.QWidget):
     def __init__(self, audio_stream):
         super().__init__()
         self.audio_stream = audio_stream
-        # Need focus to get key events.
-        self.setFocusPolicy(Qt.StrongFocus)
-        # fixed = widgets.QSizePolicy.Fixed
-        # self.setSizePolicy(fixed, fixed)
 
         self.row_count = len(self.audio_stream.freqs)
-        self.col_count = 256
+        self.col_count = 1024
         self.set_colormap_name('viridis')
 
         self.column_index = 0
@@ -57,7 +53,8 @@ class AudioWidget(widgets.QWidget):
         painter = gui.QPainter()
         painter.begin(self.pixmap)
         col = self.column_index
-        for row, color in enumerate(reversed(self.mapper.to_rgba(psd))):
+        pixel_colors = self.mapper.to_rgba(psd)
+        for row, color in enumerate(reversed(pixel_colors)):
             painter.setPen(gui.QColor.fromRgbF(*color))
             painter.drawPoint(col, row)
         self.column_index += 1
@@ -74,7 +71,7 @@ class MainWindow(widgets.QMainWindow):
         super().__init__()
 
         import threading
-        self.audio_stream = AudioStream(fs=24_000, window_length=1024)
+        self.audio_stream = AudioStream(fs=24_000, window_length=2048)
 
         self.init_central_widget()
         self.init_options_dock()
