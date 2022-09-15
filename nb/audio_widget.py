@@ -18,20 +18,20 @@ class AudioWidget(widgets.QWidget):
         self.audio_stream = audio_stream
 
         self.row_count = len(self.audio_stream.freqs)
-        self.col_count = 1024
+        self.col_count = 256
         self.set_colormap_name('viridis')
 
         self.column_index = 0
-        self.pixmap = gui.QPixmap(self.col_count, self.row_count)
-        self.pixmap.fill()
+        self.image = gui.QImage(self.col_count, self.row_count, gui.QImage.Format_RGB32)
+        self.image.fill(0xFF000000)
 
     def sizeHint(self):
         return self.maximumSize()
 
     def paintEvent(self, event):
         painter = gui.QPainter(self)
-        painter.setWindow(self.pixmap.rect())
-        painter.drawPixmap(0, 0, self.pixmap)
+        painter.setWindow(self.image.rect())
+        painter.drawImage(0, 0, self.image)
 
     @property
     def colormap_name(self):
@@ -44,34 +44,30 @@ class AudioWidget(widgets.QWidget):
 
     def logical_to_device_rect(self, rect):
         transform = gui.QTransform.fromScale(
-            self.width() / self.pixmap.width(),
-            self.height() / self.pixmap.height())
+            self.width() / self.image.width(),
+            self.height() / self.image.height())
         return transform.mapRect(rect).toAlignedRect()
 
     def append_data(self, psd):
-        self.setUpdatesEnabled(False)
-        painter = gui.QPainter()
-        painter.begin(self.pixmap)
         col = self.column_index
-        pixel_colors = self.mapper.to_rgba(psd)
-        for row, color in enumerate(reversed(pixel_colors)):
-            painter.setPen(gui.QColor.fromRgbF(*color))
-            painter.drawPoint(col, row)
+        pixel_colors = self.mapper.to_rgba(psd, bytes=True, alpha=True)
+        data = self.image.bits()
+        stride = self.image.bytesPerLine()
+        i = col * 4
+        for row, (r, g, b, a) in enumerate(reversed(pixel_colors)):
+            data[i:i+3] = bytes([b, g, r])
+            i += stride
         self.column_index += 1
         self.column_index %= self.col_count
-        painter.end()
-        self.setUpdatesEnabled(True)
         dirty_rect = self.logical_to_device_rect(core.QRectF(col, 0, 1, self.row_count))
         self.update(dirty_rect)
-
-
 
 class MainWindow(widgets.QMainWindow):
     def __init__(self):
         super().__init__()
 
         import threading
-        self.audio_stream = AudioStream(fs=24_000, window_length=2048)
+        self.audio_stream = AudioStream(fs=24_000, window_length=4096)
 
         self.init_central_widget()
         self.init_options_dock()
