@@ -14,9 +14,10 @@ widgets = QtWidgets
 Qt = core.Qt
 
 class AudioWidget(widgets.QWidget):
-    def __init__(self, audio):
+    def __init__(self, samples):
         super().__init__()
-        self.audio = audio
+        self.audio = audio_stream.AudioStream(samples,
+                                              fs=24_000, window_length=4096)
 
         self.row_count = len(self.audio.freqs)
         self.col_count = 1024
@@ -80,16 +81,13 @@ class MainWindow(widgets.QMainWindow):
     
     def __init__(self):
         super().__init__()
-
-        self.audio = audio_stream.AudioStream(audio_stream.from_serial(),
-                                              fs=24_000, window_length=4096)
-
+        self.samples = audio_stream.from_serial()
         self.init_central_widget()
         self.init_options_dock()
         self.init_shortcuts()
         
     def init_central_widget(self):
-        self.audio_widget = AudioWidget(self.audio)
+        self.audio_widget = AudioWidget(self.samples)
         self.closing.connect(self.audio_widget.close)
         central = widgets.QWidget()
         layout = widgets.QHBoxLayout(central)
