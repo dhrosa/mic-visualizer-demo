@@ -6,7 +6,7 @@ from matplotlib import colors, cm
 import matplotlib as mpl
 from threading import Thread
 
-import audio_stream
+from audio_stream import IterThread, Broadcaster, AudioStream, serial_samples
 
 core = QtCore
 gui = QtGui
@@ -16,8 +16,7 @@ Qt = core.Qt
 class AudioWidget(widgets.QWidget):
     def __init__(self, samples):
         super().__init__()
-        self.audio = audio_stream.AudioStream(samples,
-                                              fs=24_000, window_length=4096)
+        self.audio = AudioStream(samples, fs=24_000, window_length=4096)
 
         self.row_count = len(self.audio.freqs)
         self.col_count = 1024
@@ -27,7 +26,7 @@ class AudioWidget(widgets.QWidget):
         self.image = gui.QImage(self.col_count, self.row_count, gui.QImage.Format_RGB32)
         self.image.fill(0xFF000000)
 
-        self.update_thread = audio_stream.IterThread(self.process_audio())
+        self.update_thread = IterThread(self.process_audio())
 
     def process_audio(self):
         for psd in self.audio.psd_stream():
@@ -81,13 +80,14 @@ class MainWindow(widgets.QMainWindow):
     
     def __init__(self):
         super().__init__()
-        self.samples = audio_stream.from_serial()
+        self.broadcaster = Broadcaster()
+        self.broadcast_thread = IterThread(self.broadcast_loop())
         self.init_central_widget()
         self.init_options_dock()
         self.init_shortcuts()
         
     def init_central_widget(self):
-        self.audio_widget = AudioWidget(self.samples)
+        self.audio_widget = AudioWidget(self.broadcaster.subscribe())
         self.closing.connect(self.audio_widget.close)
         central = widgets.QWidget()
         layout = widgets.QHBoxLayout(central)
@@ -117,4 +117,10 @@ class MainWindow(widgets.QMainWindow):
 
     def closeEvent(self, event):
         self.closing.emit()
+        self.broadcast_thread.close()
         event.accept()
+
+    def broadcast_loop(self):
+        for samples in serial_samples():
+            self.broadcaster.broadcast(samples)
+            yield

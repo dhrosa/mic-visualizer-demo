@@ -37,7 +37,7 @@ class Broadcaster:
         with self.sinks_lock:
             sinks = tuple(self.sinks.values())
             for sink in sinks:
-                sink.put(raw)
+                sink.put(value)
 
     def subscribe(self):
         sink = Queue()
@@ -56,7 +56,7 @@ class Broadcaster:
                 del self.sinks[sink_id]
 
 
-def from_serial():
+def serial_samples():
     import numpy as np
     import serial
     import binascii
