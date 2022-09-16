@@ -3,10 +3,15 @@ import pandas as pd
 from contextlib import contextmanager
 from threading import Lock, Thread
 from queue import Queue
+from inspect import isgenerator, isgeneratorfunction
 
 class IterThread(Thread):
     def __init__(self, gen):
         super().__init__()
+        if isgeneratorfunction(gen):
+            gen = gen()
+        if not isgenerator(gen):
+            raise TypeError("`gen` must be a generator or generator function.")
         self.gen = gen
         self.closing = False
         self.start()
