@@ -1,23 +1,75 @@
 import numpy as np
 import pandas as pd
+from contextlib import contextmanager
+from threading import Lock, Thread
+from queue import Queue
 
-def input_stream():
+class IterThread(Thread):
+    def __init__(self, gen):
+        super().__init__()
+        self.gen = gen
+        self.closing = False
+        self.start()
+
+    def __del__(self):
+        self.close()
+        
+    def close(self):
+        self.closing = True
+        self.join()
+        
+    def run(self):
+        while not self.closing:
+            next(self.gen)
+
+class Broadcaster:
+    def __init__(self):        
+        self.sinks_lock = Lock()
+        self.sinks = {}
+        self.next_sink_id = 0
+
+    def broadcast(self, value):
+        with self.sinks_lock:
+            sinks = tuple(self.sinks.values())
+            for sink in sinks:
+                sink.put(raw)
+
+    def subscribe(self):
+        sink = Queue()
+        with self.sinks_lock:
+            sink_id = self.next_sink_id
+            self.next_sink_id += 1
+            self.sinks[sink_id] = sink
+        try:
+            while True:
+                item = sink.get()
+                if item is None:
+                    break
+                yield item
+        finally:
+            with self.sinks_lock:
+                del self.sinks[sink_id]
+
+
+def from_serial():
+    import numpy as np
     import serial
     import binascii
     with serial.Serial("/dev/ttyACM0") as s:
         for line in s:
-            raw = np.frombuffer(binascii.a2b_base64(line), dtype='h')
-            yield raw
+            yield np.frombuffer(binascii.a2b_base64(line), dtype='h')
+
 
 class AudioStream:
-    def __init__(self, fs, window_length):
+    def __init__(self, samples, fs, window_length):
+        self.samples = samples
         self.fs = fs
         self.window_length = window_length
         self.freqs = np.linspace(0, self.fs / 2, (self.window_length // 2) + 1)
 
     def frame_stream(self):
         accum = []
-        for s in input_stream():
+        for s in self.samples:
             accum = np.append(accum, s)
             while len(accum) >= self.window_length:
                 framed, accum = np.split(accum, [self.window_length])

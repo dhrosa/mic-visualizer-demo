@@ -4,8 +4,9 @@ import numpy as np
 from PySide6 import QtGui, QtWidgets, QtCore
 from matplotlib import colors, cm
 import matplotlib as mpl
+from threading import Thread
 
-from audio_stream import AudioStream
+import audio_stream
 
 core = QtCore
 gui = QtGui
@@ -13,21 +14,32 @@ widgets = QtWidgets
 Qt = core.Qt
 
 class AudioWidget(widgets.QWidget):
-    def __init__(self, audio_stream):
+    def __init__(self, audio):
         super().__init__()
-        self.audio_stream = audio_stream
+        self.audio = audio
 
-        self.row_count = len(self.audio_stream.freqs)
-        self.col_count = 256
+        self.row_count = len(self.audio.freqs)
+        self.col_count = 1024
         self.set_colormap_name('viridis')
 
         self.column_index = 0
         self.image = gui.QImage(self.col_count, self.row_count, gui.QImage.Format_RGB32)
         self.image.fill(0xFF000000)
 
+        self.update_thread = audio_stream.IterThread(self.process_audio())
+
+    def process_audio(self):
+        for psd in self.audio.psd_stream():
+            self.append_data(psd)
+            yield
+
     def sizeHint(self):
         return self.maximumSize()
 
+    def closeEvent(self, event):
+        self.update_thread.close()
+        event.accept()
+    
     def paintEvent(self, event):
         painter = gui.QPainter(self)
         painter.setWindow(self.image.rect())
@@ -62,24 +74,23 @@ class AudioWidget(widgets.QWidget):
         dirty_rect = self.logical_to_device_rect(core.QRectF(col, 0, 1, self.row_count))
         self.update(dirty_rect)
 
+
 class MainWindow(widgets.QMainWindow):
+    closing = core.Signal()
+    
     def __init__(self):
         super().__init__()
 
-        import threading
-        self.audio_stream = AudioStream(fs=24_000, window_length=4096)
+        self.audio = audio_stream.AudioStream(audio_stream.from_serial(),
+                                              fs=24_000, window_length=4096)
 
         self.init_central_widget()
         self.init_options_dock()
         self.init_shortcuts()
-
-        self.closing = False
-        self.update_thread = threading.Thread(target=self.update_loop)
-        self.update_thread.start()
-
         
     def init_central_widget(self):
-        self.audio_widget = AudioWidget(self.audio_stream)
+        self.audio_widget = AudioWidget(self.audio)
+        self.closing.connect(self.audio_widget.close)
         central = widgets.QWidget()
         layout = widgets.QHBoxLayout(central)
         layout.addWidget(self.audio_widget)
@@ -105,14 +116,7 @@ class MainWindow(widgets.QMainWindow):
         for k in close_keys:
             gui.QShortcut(k, self, self.close)
 
+
     def closeEvent(self, event):
-        self.closing = True
-        self.update_thread.join()
+        self.closing.emit()
         event.accept()
-
-    def update_loop(self):
-        stream = self.audio_stream.psd_stream()
-        while not self.closing:
-            self.audio_widget.append_data(next(stream))
-
-
