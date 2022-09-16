@@ -107,12 +107,8 @@ class MainWindow(widgets.QMainWindow):
         self.addDockWidget(Qt.RightDockWidgetArea, options_dock)
 
     def init_shortcuts(self):
-        close_keys = [
-            gui.QKeySequence.Close,
-            gui.QKeySequence.Quit,
-        ]
-        for k in close_keys:
-            gui.QShortcut(k, self, self.close)
+        gui.QShortcut(gui.QKeySequence.Close, self, self.close)
+        gui.QShortcut(gui.QKeySequence.Quit, self, self.close)
 
 
     def closeEvent(self, event):
