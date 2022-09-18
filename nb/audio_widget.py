@@ -1,16 +1,44 @@
 from PySide6.QtCore import Qt, QObject, QRectF
 from PySide6.QtGui import QColor, QImage, QKeySequence, QPainter, QShortcut, QTransform
-from PySide6.QtWidgets import QApplication, QWidget
+from PySide6.QtWidgets import QApplication, QComboBox, QDialog, QDialogButtonBox, QFormLayout, QLabel, QWidget
 
 import itertools
 import funcy
 import numpy as np
+from weakref import WeakSet
 
 from matplotlib import colors, cm
 import matplotlib as mpl
+from si_prefix import si_format
 from threading import Thread
 
 from audio_stream import IterThread, Broadcaster, AudioStream, serial_samples
+
+class NewWindowDialog(QDialog):
+    def __init__(self, fs):
+        super().__init__()
+        layout = QFormLayout(self)
+        layout.addRow("Sample Rate", QLabel(str(fs)))
+        
+        self.window_length = QComboBox()
+        default_value = 1024
+        default_index = 0
+        for i, power in enumerate(range(8, 16)):
+            val = 1 << power
+            if val == default_value:
+                default_index = i
+            duration = si_format(val / fs, precision=1)
+            freq = si_format(fs / val, precision=1)
+            text = f'{val} samples / {duration}s / {freq}Hz)'
+            self.window_length.addItem(text, val)
+        self.window_length.setCurrentIndex(default_index)
+        layout.addRow("FFT window length", self.window_length)
+
+        buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        buttons.accepted.connect(self.accept)
+        buttons.rejected.connect(self.reject)
+        layout.addRow(buttons)
+        
 
 class AudioWidget(QWidget):
     def __init__(self, samples, fs, window_length):
@@ -89,10 +117,17 @@ class Context(QObject):
         self.fs = 24_000
         self.broadcaster = Broadcaster()
         self.broadcast_thread = IterThread(self.broadcast_loop())
-        self.windows = []
-        self.app.lastWindowClosed.connect(self.broadcast_thread.close)
-        self.new_window()
+        self.windows = set()
+        self.app.aboutToQuit.connect(self.broadcast_thread.close)
+        self.new_window_prompt()
 
+    def new_window_prompt(self):
+        dialog = NewWindowDialog(self.fs)
+        dialog.accepted.connect(lambda: self.new_window_prompt_complete(dialog))
+        dialog.open()
+
+    def new_window_prompt_complete(self, dialog):
+        self.new_window(dialog.window_length.currentData())
 
     def broadcast_loop(self):
         for samples in serial_samples():
@@ -100,10 +135,10 @@ class Context(QObject):
             yield
 
 
-    def new_window(self):
-        w = AudioWidget(self.broadcaster.subscribe(), self.fs, 2048)
-        QShortcut(QKeySequence.New, w, self.new_window)
+    def new_window(self, window_length):
+        w = AudioWidget(self.broadcaster.subscribe(), self.fs, window_length)
+        QShortcut(QKeySequence.New, w, self.new_window_prompt)
         QShortcut(QKeySequence.Close, w, w.close)
         QShortcut(QKeySequence.Quit, w, self.app.closeAllWindows)
-        self.windows.append(w)
+        self.windows.add(w)
         w.show()
