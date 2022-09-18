@@ -1,20 +1,18 @@
+from PySide6.QtCore import Qt, QObject, QRectF
+from PySide6.QtGui import QColor, QImage, QKeySequence, QPainter, QShortcut, QTransform
+from PySide6.QtWidgets import QApplication, QWidget
+
 import itertools
 import funcy
 import numpy as np
-from PySide6.QtWidgets import QApplication
-from PySide6 import QtGui, QtWidgets, QtCore
+
 from matplotlib import colors, cm
 import matplotlib as mpl
 from threading import Thread
 
 from audio_stream import IterThread, Broadcaster, AudioStream, serial_samples
 
-core = QtCore
-gui = QtGui
-widgets = QtWidgets
-Qt = core.Qt
-
-class AudioWidget(widgets.QWidget):
+class AudioWidget(QWidget):
     def __init__(self, samples, fs, window_length):
         super().__init__()
         self.audio = AudioStream(samples, fs, window_length)
@@ -24,7 +22,7 @@ class AudioWidget(widgets.QWidget):
         self.set_colormap_name('viridis')
 
         self.column_index = 0
-        self.image = gui.QImage(self.col_count, self.row_count, gui.QImage.Format_RGB32)
+        self.image = QImage(self.col_count, self.row_count, QImage.Format_RGB32)
         self.image.fill(0xFF000000)
 
         self.update_thread = IterThread(self.process_audio())
@@ -46,7 +44,7 @@ class AudioWidget(widgets.QWidget):
 
 
     def paintEvent(self, event):
-        painter = gui.QPainter(self)
+        painter = QPainter(self)
         painter.setWindow(self.image.rect())
         painter.drawImage(0, 0, self.image)
 
@@ -63,7 +61,7 @@ class AudioWidget(widgets.QWidget):
 
 
     def logical_to_device_rect(self, rect):
-        transform = gui.QTransform.fromScale(
+        transform = QTransform.fromScale(
             self.width() / self.image.width(),
             self.height() / self.image.height())
         return transform.mapRect(rect).toAlignedRect()
@@ -80,11 +78,11 @@ class AudioWidget(widgets.QWidget):
             i += stride
         self.column_index += 1
         self.column_index %= self.col_count
-        dirty_rect = self.logical_to_device_rect(core.QRectF(col, 0, 1, self.row_count))
+        dirty_rect = self.logical_to_device_rect(QRectF(col, 0, 1, self.row_count))
         self.update(dirty_rect)
 
 
-class Context(core.QObject):
+class Context(QObject):
     def __init__(self, app):
         super().__init__()
         self.app = app
@@ -104,8 +102,8 @@ class Context(core.QObject):
 
     def new_window(self):
         w = AudioWidget(self.broadcaster.subscribe(), self.fs, 2048)
-        gui.QShortcut(gui.QKeySequence.New, w, self.new_window)
-        gui.QShortcut(gui.QKeySequence.Close, w, w.close)
-        gui.QShortcut(gui.QKeySequence.Quit, w, self.app.closeAllWindows)
+        QShortcut(QKeySequence.New, w, self.new_window)
+        QShortcut(QKeySequence.Close, w, w.close)
+        QShortcut(QKeySequence.Quit, w, self.app.closeAllWindows)
         self.windows.append(w)
         w.show()
