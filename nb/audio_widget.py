@@ -1,6 +1,6 @@
 from PySide6.QtCore import Qt, QObject, QRectF
-from PySide6.QtGui import QColor, QImage, QKeySequence, QPainter, QShortcut, QTransform
-from PySide6.QtWidgets import QApplication, QComboBox, QDialog, QDialogButtonBox, QFormLayout, QLabel, QWidget
+from PySide6.QtGui import QColor, QImage, QKeySequence, QPainter, QPixmap, QShortcut, QTransform
+from PySide6.QtWidgets import QApplication, QComboBox, QDialog, QDialogButtonBox, QFormLayout, QLabel, QVBoxLayout, QWidget
 
 import itertools
 import funcy
@@ -11,6 +11,7 @@ from matplotlib import colors, cm
 import matplotlib as mpl
 from si_prefix import si_format
 from threading import Thread
+from collections import deque
 
 from audio_stream import IterThread, Broadcaster, AudioStream, serial_samples
 
@@ -38,7 +39,41 @@ class NewWindowDialog(QDialog):
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
         layout.addRow(buttons)
+
+
+class ColormapDialog(QDialog):
+    def __init__(self, parent):
+        super().__init__(parent)
+        layout = QVBoxLayout(self)
+
+        self.colormap_name = QComboBox()
+        for name in mpl.colormaps.keys():
+            self.colormap_name.addItem(name)
+        layout.addWidget(self.colormap_name, 1)
         
+        self.preview_label = QLabel()
+        self.preview_label.setScaledContents(True)
+        layout.addWidget(self.preview_label, 1)
+
+        self.colormap_name.currentTextChanged.connect(self.update_preview_label)
+        self.update_preview_label(self.colormap_name.currentText())
+        
+        buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        buttons.accepted.connect(self.accept)
+        buttons.rejected.connect(self.reject)
+        layout.addWidget(buttons, 1)
+
+    def update_preview_label(self, name):
+        cmap = cm.get_cmap(name)
+        n = 256
+        image = QImage(n, 1, QImage.Format_ARGB32)
+        data = image.bits()
+        colors = cmap(np.linspace(0, 1, n), bytes=True)
+        for col, (r, g, b, a) in enumerate(colors):
+            i = 4 * col
+            data[i:i+4] = bytes([b, g, r, a])
+        self.preview_label.setPixmap(QPixmap.fromImage(image))
+
 
 class AudioWidget(QWidget):
     def __init__(self, samples, fs, window_length):
@@ -47,14 +82,25 @@ class AudioWidget(QWidget):
 
         self.row_count = len(self.audio.freqs)
         self.col_count = 1024
+        self.data = deque(maxlen=self.col_count)
         self.set_colormap_name('viridis')
 
         self.column_index = 0
         self.image = QImage(self.col_count, self.row_count, QImage.Format_RGB32)
         self.image.fill(0xFF000000)
 
+        self.init_shortcuts()
         self.update_thread = IterThread(self.process_audio())
 
+    def init_shortcuts(self):
+        QShortcut(QKeySequence("c"), self, self.colormap_prompt)
+
+    def colormap_prompt(self):
+        def on_complete(dialog):
+            self.set_colormap_name(dialog.colormap_name.currentText())
+        dialog = ColormapDialog(self)
+        dialog.accepted.connect(lambda: on_complete(dialog))
+        dialog.open()
 
     def process_audio(self):
         for psd in self.audio.psd_stream():
@@ -86,6 +132,12 @@ class AudioWidget(QWidget):
         cmap = cm.get_cmap(cmap_name)
         norm = colors.BoundaryNorm(np.linspace(10, 34, 8), cmap.N)
         self.mapper = cm.ScalarMappable(norm, cmap)
+        # Redraw existing data with new colors
+        self.column_index = 0
+        data = self.data.copy()
+        self.data.clear()
+        for psd in data:
+            self.append_data(psd)
 
 
     def logical_to_device_rect(self, rect):
@@ -96,6 +148,7 @@ class AudioWidget(QWidget):
 
 
     def append_data(self, psd):
+        self.data.append(psd)
         col = self.column_index
         pixel_colors = self.mapper.to_rgba(psd, bytes=True, alpha=True)
         data = self.image.bits()
