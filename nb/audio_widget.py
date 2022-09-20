@@ -1,5 +1,5 @@
-from PySide6.QtCore import Qt, QObject, QRectF
-from PySide6.QtGui import QColor, QImage, QKeySequence, QPainter, QPixmap, QShortcut, QTransform
+from PySide6.QtCore import Qt, QObject, QRectF, QSize
+from PySide6.QtGui import QColor, QIcon, QImage, QKeySequence, QPainter, QPixmap, QShortcut, QTransform
 from PySide6.QtWidgets import QApplication, QComboBox, QDialog, QDialogButtonBox, QFormLayout, QLabel, QVBoxLayout, QWidget
 
 import itertools
@@ -44,35 +44,30 @@ class NewWindowDialog(QDialog):
 class ColormapDialog(QDialog):
     def __init__(self, parent):
         super().__init__(parent)
-        layout = QVBoxLayout(self)
-
-        self.colormap_name = QComboBox()
-        for name in mpl.colormaps.keys():
-            self.colormap_name.addItem(name)
-        layout.addWidget(self.colormap_name, 1)
+        self.icon_size = QSize(256, 32)
         
-        self.preview_label = QLabel()
-        self.preview_label.setScaledContents(True)
-        layout.addWidget(self.preview_label, 1)
-
-        self.colormap_name.currentTextChanged.connect(self.update_preview_label)
-        self.update_preview_label(self.colormap_name.currentText())
+        layout = QVBoxLayout(self)
+        self.colormap_name = QComboBox()
+        self.colormap_name.setIconSize(self.icon_size)
+        for name in mpl.colormaps.keys():
+            self.colormap_name.addItem(self.preview_icon(name), name)
+        layout.addWidget(self.colormap_name)
         
         buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
-        layout.addWidget(buttons, 1)
+        layout.addWidget(buttons)
 
-    def update_preview_label(self, name):
+    def preview_icon(self, name):
         cmap = cm.get_cmap(name)
-        n = 256
-        image = QImage(n, 1, QImage.Format_ARGB32)
+        image = QImage(self.icon_size.width(), 1, QImage.Format_ARGB32)
         data = image.bits()
-        colors = cmap(np.linspace(0, 1, n), bytes=True)
+        colors = cmap(np.linspace(0, 1, self.icon_size.width()), bytes=True)
         for col, (r, g, b, a) in enumerate(colors):
             i = 4 * col
-            data[i:i+4] = bytes([b, g, r, a])
-        self.preview_label.setPixmap(QPixmap.fromImage(image))
+            data[i:i+4] = bytes([b, g, r, a])            
+        return QIcon(QPixmap.fromImage(image.scaled(self.icon_size)))
+                        
 
 
 class AudioWidget(QWidget):
