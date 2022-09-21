@@ -42,7 +42,7 @@ class NewWindowDialog(QDialog):
 
 
 class ColormapDialog(QDialog):
-    def __init__(self, parent):
+    def __init__(self, parent, original_name):
         super().__init__(parent)
         self.icon_size = QSize(256, 32)
         
@@ -51,6 +51,7 @@ class ColormapDialog(QDialog):
         self.colormap_name.setIconSize(self.icon_size)
         for name in mpl.colormaps.keys():
             self.colormap_name.addItem(self.preview_icon(name), name)
+        self.colormap_name.setCurrentText(original_name)
         layout.addWidget(self.colormap_name)
         
         buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
@@ -93,7 +94,7 @@ class AudioWidget(QWidget):
     def colormap_prompt(self):
         def on_complete(dialog):
             self.set_colormap_name(dialog.colormap_name.currentText())
-        dialog = ColormapDialog(self)
+        dialog = ColormapDialog(self, self.colormap_name)
         dialog.accepted.connect(lambda: on_complete(dialog))
         dialog.open()
 
