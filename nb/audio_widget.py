@@ -95,18 +95,22 @@ class ImageViewer(QWidget):
             painter.drawImage(0, 0, self.image)
 
 
-class AudioWidget(ImageViewer):
+class AudioWidget(QWidget):
     def __init__(self, samples, fs, window_length):
         super().__init__()
         self.audio = AudioStream(samples, fs, window_length)
 
         self.row_count = len(self.audio.freqs)
         self.col_count = 1024
+        self.column_index = 0
         self.data = deque(maxlen=self.col_count)
+
+        layout = QVBoxLayout(self)
+        self.viewer = ImageViewer()
+        layout.addWidget(self.viewer)
+        self.viewer.reset_image(self.col_count, self.row_count)
         self.set_colormap_name('viridis')
 
-        self.column_index = 0
-        self.reset_image(self.col_count, self.row_count)
 
         self.init_shortcuts()
         self.update_thread = IterThread(self.process_audio())
@@ -126,7 +130,7 @@ class AudioWidget(ImageViewer):
 
     def process_audio(self):
         for psd in self.audio.psd_stream():
-            with self.image_lock:
+            with self.viewer.image_lock:
                 self.append_data(psd)
             yield
 
@@ -152,7 +156,7 @@ class AudioWidget(ImageViewer):
         self.column_index = 0
         data = self.data.copy()
         self.data.clear()
-        with self.image_lock:
+        with self.viewer.image_lock:
             for psd in data:
                 self.append_data(psd)
 
@@ -161,15 +165,15 @@ class AudioWidget(ImageViewer):
         self.data.append(psd)
         col = self.column_index
         pixel_colors = self.mapper.to_rgba(psd, bytes=True, alpha=True)
-        data = self.image.bits()
-        stride = self.image.bytesPerLine()
+        data = self.viewer.image.bits()
+        stride = self.viewer.image.bytesPerLine()
         i = col * 4
         for row, (r, g, b, a) in enumerate(reversed(pixel_colors)):
             data[i:i+3] = bytes([b, g, r])
             i += stride
         self.column_index += 1
         self.column_index %= self.col_count
-        self.update_logical_rect(QRectF(col, 0, 1, self.row_count))
+        self.viewer.update_logical_rect(QRectF(col, 0, 1, self.row_count))
 
 
 class Context(QObject):
