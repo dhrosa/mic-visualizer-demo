@@ -1,6 +1,6 @@
-from PySide6.QtCore import Qt, QObject, QRectF, QSize
+from PySide6.QtCore import Qt, QKeyCombination, QObject, QRectF, QSize
 from PySide6.QtGui import QColor, QIcon, QImage, QKeySequence, QPainter, QPixmap, QShortcut, QTransform
-from PySide6.QtWidgets import QApplication, QComboBox, QDialog, QDialogButtonBox, QFormLayout, QLabel, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QApplication, QComboBox, QDialog, QDialogButtonBox, QFormLayout, QLabel, QMainWindow, QScrollArea, QVBoxLayout, QWidget
 
 import itertools
 import funcy
@@ -72,6 +72,8 @@ class ColormapDialog(QDialog):
 class ImageViewer(QWidget):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        #self.setAutoFillBackground(False)
+        #self.setAttribute(Qt.WA_OpaquePaintEvent)
         self.image_lock = Lock()
         self.reset_image(1, 1)
 
@@ -80,22 +82,55 @@ class ImageViewer(QWidget):
         self.image.fill(fill_color)
 
     def update_logical_rect(self, rect):
-        self.update(self.logical_to_device_rect(rect))
+        self.update(self.logical_to_widget_transform.mapRect(rect).toAlignedRect())
 
-    def logical_to_device_rect(self, rect):
-        transform = QTransform.fromScale(
+    @property
+    def logical_to_widget_transform(self):
+        return QTransform.fromScale(
             self.width() / self.image.width(),
             self.height() / self.image.height())
-        return transform.mapRect(rect).toAlignedRect()
+
+    @property
+    def widget_to_logical_transform(self):
+        return QTransform.fromScale(
+            self.image.width() / self.width(),
+            self.image.height() / self.height())
 
     def paintEvent(self, event):
         painter = QPainter(self)
         with self.image_lock:
+            dest_rect = event.rect()
+            source_rect = self.widget_to_logical_transform.mapRect(QRectF(dest_rect)).toAlignedRect()
             painter.setWindow(self.image.rect())
-            painter.drawImage(0, 0, self.image)
+            painter.drawImage(source_rect.topLeft(), self.image, source_rect)
 
 
-class AudioWidget(QWidget):
+    def sizeHint(self):
+        return self.image.size()
+
+
+class ScrollArea(QScrollArea):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.scale = 1
+        self.setSizeAdjustPolicy(QScrollArea.AdjustToContentsOnFirstShow)
+        QShortcut(QKeySequence.ZoomIn, self, self.zoom_in)
+        QShortcut(QKeySequence.ZoomOut, self, self.zoom_out)
+
+    def zoom(self, factor):
+        self.scale *= factor
+        old_size = self.widget().size()
+        new_size = self.widget().sizeHint() * self.scale
+        self.widget().resize(new_size)
+
+    def zoom_in(self):
+        self.zoom(2)
+
+    def zoom_out(self):
+        self.zoom(0.5)
+
+
+class AudioWidget(QMainWindow):
     def __init__(self, samples, fs, window_length):
         super().__init__()
         self.audio = AudioStream(samples, fs, window_length)
@@ -105,13 +140,13 @@ class AudioWidget(QWidget):
         self.column_index = 0
         self.data = deque(maxlen=self.col_count)
 
-        layout = QVBoxLayout(self)
         self.viewer = ImageViewer()
-        layout.addWidget(self.viewer)
         self.viewer.reset_image(self.col_count, self.row_count)
+        self.scroll_area = ScrollArea()
+        self.scroll_area.setWidget(self.viewer)
+        self.setCentralWidget(self.scroll_area)
+
         self.set_colormap_name('viridis')
-
-
         self.init_shortcuts()
         self.update_thread = IterThread(self.process_audio())
 
@@ -136,7 +171,6 @@ class AudioWidget(QWidget):
 
     def sizeHint(self):
         return self.maximumSize()
-
 
     def closeEvent(self, event):
         self.update_thread.close()
@@ -169,7 +203,7 @@ class AudioWidget(QWidget):
         stride = self.viewer.image.bytesPerLine()
         i = col * 4
         for row, (r, g, b, a) in enumerate(reversed(pixel_colors)):
-            data[i:i+3] = bytes([b, g, r])
+            data[i:i+4] = bytes([b, g, r, a])
             i += stride
         self.column_index += 1
         self.column_index %= self.col_count
