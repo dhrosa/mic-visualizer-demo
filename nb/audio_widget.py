@@ -1,6 +1,6 @@
-from PySide6.QtCore import Qt, QKeyCombination, QObject, QRectF, QSize, Signal
-from PySide6.QtGui import QColor, QIcon, QImage, QKeySequence, QPainter, QPixmap, QShortcut, QTransform
-from PySide6.QtWidgets import QApplication, QComboBox, QDialog, QDialogButtonBox, QFormLayout, QLabel, QMainWindow, QScrollArea, QVBoxLayout, QWidget
+from PySide6.QtCore import Qt, QKeyCombination, QObject, QPoint, QRect, QRectF, QSize, Signal
+from PySide6.QtGui import QColor, QIcon, QImage, QKeySequence, QPainter, QPen, QPixmap, QShortcut, QTransform
+from PySide6.QtWidgets import QApplication, QComboBox, QDialog, QDialogButtonBox, QFormLayout, QLabel, QMainWindow, QRubberBand, QScrollArea, QVBoxLayout, QWidget
 
 import itertools
 import funcy
@@ -14,6 +14,30 @@ from threading import Thread, Lock
 from collections import deque
 
 from audio_stream import IterThread, Broadcaster, AudioStream, serial_samples
+
+class Cursor(QWidget):
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.setAttribute(Qt.WA_TransparentForMouseEvents)
+        self.setAttribute(Qt.WA_NoSystemBackground)
+        self.setVisible(False)
+
+        self.target = QPoint(0, 0)
+
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        pen = QPen()
+        pen.setDashPattern([10, 10])
+        pen.setCapStyle(Qt.FlatCap)
+        pen.setColor(QColor.fromHslF(0, 0, 0.5, 0.5))
+        painter.setPen(pen)
+
+        # Horizontal
+        painter.drawLine(0, self.target.y(),
+                         self.width(), self.target.y())
+        # Vertical
+        painter.drawLine(self.target.x(), 0,
+                         self.target.x(), self.height())
 
 class NewWindowDialog(QDialog):
     def __init__(self, fs):
@@ -74,18 +98,20 @@ class ImageViewer(QWidget):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        #self.setAutoFillBackground(False)
-        #self.setAttribute(Qt.WA_OpaquePaintEvent)
         self.image_lock = Lock()
         self.reset_image(1, 1)
         self.setMouseTracking(True)
+        self.cursor = Cursor(self)
+
 
     def reset_image(self, width, height, fill_color=0xFF_00_00_00):
         self.image = QImage(width, height, QImage.Format_ARGB32)
         self.image.fill(fill_color)
 
+
     def update_logical_rect(self, rect):
         self.update(self.logical_to_widget_transform.mapRect(rect).toAlignedRect())
+
 
     @property
     def logical_to_widget_transform(self):
@@ -93,11 +119,13 @@ class ImageViewer(QWidget):
             self.width() / self.image.width(),
             self.height() / self.image.height())
 
+
     @property
     def widget_to_logical_transform(self):
         return QTransform.fromScale(
             self.image.width() / self.width(),
             self.image.height() / self.height())
+
 
     def paintEvent(self, event):
         painter = QPainter(self)
@@ -107,17 +135,29 @@ class ImageViewer(QWidget):
             painter.setWindow(self.image.rect())
             painter.drawImage(source_rect.topLeft(), self.image, source_rect)
 
+
     def moveEvent(self, event):
         self.update()
         super().moveEvent(event)
 
+
     def sizeHint(self):
         return self.image.size()
+
+
+    def enterEvent(self, event):
+        self.cursor.show()
+        self.cursor.raise_()
+
 
     def mouseMoveEvent(self, event):
         widget_pos = event.pos()
         image_pos = self.widget_to_logical_transform.map(widget_pos)
         self.binHovered.emit(image_pos.x(), image_pos.y())
+
+        self.cursor.setGeometry(0, 0, self.width(), self.height())
+        self.cursor.target = widget_pos
+        self.cursor.update()
 
 
 class ScrollArea(QScrollArea):
