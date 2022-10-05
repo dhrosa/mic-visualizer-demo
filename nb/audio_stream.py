@@ -18,17 +18,17 @@ class IterThread(Thread):
 
     def __del__(self):
         self.close()
-        
+
     def close(self):
         self.closing = True
         self.join()
-        
+
     def run(self):
         while not self.closing:
             next(self.gen)
 
 class Broadcaster:
-    def __init__(self):        
+    def __init__(self):
         self.sinks_lock = Lock()
         self.sinks = {}
         self.next_sink_id = 0

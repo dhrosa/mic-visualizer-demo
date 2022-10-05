@@ -1,4 +1,4 @@
-from PySide6.QtCore import Qt, QKeyCombination, QObject, QRectF, QSize
+from PySide6.QtCore import Qt, QKeyCombination, QObject, QRectF, QSize, Signal
 from PySide6.QtGui import QColor, QIcon, QImage, QKeySequence, QPainter, QPixmap, QShortcut, QTransform
 from PySide6.QtWidgets import QApplication, QComboBox, QDialog, QDialogButtonBox, QFormLayout, QLabel, QMainWindow, QScrollArea, QVBoxLayout, QWidget
 
@@ -70,12 +70,15 @@ class ColormapDialog(QDialog):
 
 
 class ImageViewer(QWidget):
+    binHovered = Signal(int, int)
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         #self.setAutoFillBackground(False)
         #self.setAttribute(Qt.WA_OpaquePaintEvent)
         self.image_lock = Lock()
         self.reset_image(1, 1)
+        self.setMouseTracking(True)
 
     def reset_image(self, width, height, fill_color=0xFF_00_00_00):
         self.image = QImage(width, height, QImage.Format_ARGB32)
@@ -104,9 +107,17 @@ class ImageViewer(QWidget):
             painter.setWindow(self.image.rect())
             painter.drawImage(source_rect.topLeft(), self.image, source_rect)
 
+    def moveEvent(self, event):
+        self.update()
+        super().moveEvent(event)
 
     def sizeHint(self):
         return self.image.size()
+
+    def mouseMoveEvent(self, event):
+        widget_pos = event.pos()
+        image_pos = self.widget_to_logical_transform.map(widget_pos)
+        self.binHovered.emit(image_pos.x(), image_pos.y())
 
 
 class ScrollArea(QScrollArea):
@@ -142,18 +153,33 @@ class AudioWidget(QMainWindow):
 
         self.viewer = ImageViewer()
         self.viewer.reset_image(self.col_count, self.row_count)
+        self.viewer.binHovered.connect(self.update_statusbar)
         self.scroll_area = ScrollArea()
         self.scroll_area.setWidget(self.viewer)
         self.setCentralWidget(self.scroll_area)
 
         self.set_colormap_name('viridis')
         self.init_shortcuts()
+        self.init_status_bar()
         self.update_thread = IterThread(self.process_audio())
 
 
     def init_shortcuts(self):
         QShortcut(QKeySequence("c"), self, self.colormap_prompt)
 
+    def init_status_bar(self):
+        self.frequency_label = QLabel()
+        self.statusBar().addPermanentWidget(self.frequency_label)
+
+        font = self.frequency_label.font()
+        font.setPointSize(24)
+        font.setFamily("monospace")
+        self.frequency_label.setFont(font)
+
+    def update_statusbar(self, x, y):
+        f = self.audio.freqs[self.row_count - y - 1]
+        f_str = si_format(f, precision=1, format_str="{value}{prefix}Hz")
+        self.frequency_label.setText(f"F={int(round(f)):5d} Hz")
 
     def colormap_prompt(self):
         def on_complete(dialog):
