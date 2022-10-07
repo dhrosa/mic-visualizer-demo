@@ -1,11 +1,11 @@
-from PySide6.QtCore import Qt, QKeyCombination, QObject, QPoint, QRect, QRectF, QSize, Signal
+from PySide6.QtCore import Qt, QKeyCombination, QLineF, QObject, QPoint, QPointF, QRect, QRectF, QSize, Signal
 from PySide6.QtGui import QColor, QIcon, QImage, QKeySequence, QPainter, QPen, QPixmap, QShortcut, QTransform
 from PySide6.QtWidgets import QApplication, QComboBox, QDialog, QDialogButtonBox, QFormLayout, QLabel, QMainWindow, QRubberBand, QScrollArea, QVBoxLayout, QWidget
 
 import itertools
 import funcy
 import numpy as np
-from weakref import WeakSet
+from math import floor
 
 from matplotlib import colors, cm
 import matplotlib as mpl
@@ -22,7 +22,7 @@ class Cursor(QWidget):
         self.setAttribute(Qt.WA_NoSystemBackground)
         self.setVisible(False)
 
-        self.target = QPoint(0, 0)
+        self.target = QPointF(0, 0)
 
     def paintEvent(self, event):
         painter = QPainter(self)
@@ -33,11 +33,11 @@ class Cursor(QWidget):
         painter.setPen(pen)
 
         # Horizontal
-        painter.drawLine(0, self.target.y(),
-                         self.width(), self.target.y())
+        painter.drawLine(QLineF(0, self.target.y(),
+                                self.width(), self.target.y()))
         # Vertical
-        painter.drawLine(self.target.x(), 0,
-                         self.target.x(), self.height())
+        painter.drawLine(QLineF(self.target.x(), 0,
+                                self.target.x(), self.height()))
 
 class NewWindowDialog(QDialog):
     def __init__(self, fs):
@@ -94,7 +94,7 @@ class ColormapDialog(QDialog):
 
 
 class ImageViewer(QWidget):
-    binHovered = Signal(int, int)
+    binHovered = Signal(QPoint)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -151,12 +151,17 @@ class ImageViewer(QWidget):
 
 
     def mouseMoveEvent(self, event):
-        widget_pos = event.pos()
+        widget_pos = QPointF(event.pos())
         image_pos = self.widget_to_logical_transform.map(widget_pos)
-        self.binHovered.emit(image_pos.x(), image_pos.y())
+        # Each image pixel is mapped to a rectangle identified by its top-left
+        # corner (towards origin).
+        snapped_image_pos = QPoint(floor(image_pos.x()), floor(image_pos.y()))
+        self.binHovered.emit(snapped_image_pos)
 
+        # Snap cursor to midpoint of pixel rectangle.
+        self.cursor.target = self.logical_to_widget_transform.map(
+            QPointF(snapped_image_pos) + QPointF(0.5, 0.5))
         self.cursor.setGeometry(0, 0, self.width(), self.height())
-        self.cursor.target = widget_pos
         self.cursor.update()
 
 
@@ -216,8 +221,8 @@ class AudioWidget(QMainWindow):
         font.setFamily("monospace")
         self.frequency_label.setFont(font)
 
-    def update_statusbar(self, x, y):
-        f = self.audio.freqs[self.row_count - y - 1]
+    def update_statusbar(self, bin_pos):
+        f = self.audio.freqs[self.row_count - bin_pos.y() - 1]
         f_str = si_format(f, precision=1, format_str="{value}{prefix}Hz")
         self.frequency_label.setText(f"F={int(round(f)):5d} Hz")
 
