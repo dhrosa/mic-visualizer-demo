@@ -15,6 +15,28 @@ from collections import deque
 
 from audio_stream import IterThread, Broadcaster, AudioStream, serial_samples
 
+class ImageBuffer:
+    """
+    Presents a numpy-compatible view of a QImage in
+    (row, column, channel) order.
+    """
+    def __init__(self, image):
+        self.image = image
+
+    @property
+    def __array_interface__(self):
+        return {
+            'typestr': '<u1',
+            'data': self.image.bits(),
+            'shape': (self.image.height(), self.image.width(), 4),
+            'strides': (self.image.bytesPerLine(), 4, 1),
+        }
+
+
+def image_numpy_view(image):
+    return np.array(ImageBuffer(image), copy=False)
+
+
 class Cursor(QWidget):
     def __init__(self, parent):
         super().__init__(parent)
@@ -278,13 +300,14 @@ class AudioWidget(QMainWindow):
     def append_data(self, psd):
         self.data.append(psd)
         col = self.column_index
-        pixel_colors = self.mapper.to_rgba(psd, bytes=True, alpha=True)
-        data = self.viewer.image.bits()
-        stride = self.viewer.image.bytesPerLine()
-        i = col * 4
-        for row, (r, g, b, a) in enumerate(reversed(pixel_colors)):
-            data[i:i+4] = bytes([b, g, r, a])
-            i += stride
+        # shape = psd.shape + (4,)
+        pixel_colors = np.array(self.mapper.to_rgba(psd, bytes=True), dtype='u8')
+        # RGBA -(roll)-> ARGB -(flip)-> BGRA
+        pixel_colors = np.flip(
+            np.roll(pixel_colors, 1, axis=-1),
+            axis=-1)
+        data = image_numpy_view(self.viewer.image)
+        data[:, col, :] = np.flip(pixel_colors, axis=0)
         self.column_index += 1
         self.column_index %= self.col_count
         self.viewer.update_logical_rect(QRectF(col, 0, 1, self.row_count))
