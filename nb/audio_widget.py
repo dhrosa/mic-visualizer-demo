@@ -1,6 +1,6 @@
 from PySide6.QtCore import Qt, QKeyCombination, QLineF, QObject, QPoint, QPointF, QRect, QRectF, QSize, Signal
 from PySide6.QtGui import QColor, QIcon, QImage, QKeySequence, QPainter, QPen, QPixmap, QShortcut, QTransform
-from PySide6.QtWidgets import QApplication, QComboBox, QDialog, QDialogButtonBox, QFormLayout, QLabel, QMainWindow, QRubberBand, QScrollArea, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QApplication, QComboBox, QDialog, QDialogButtonBox, QDockWidget, QFormLayout, QLabel, QMainWindow, QRubberBand, QScrollArea, QVBoxLayout, QWidget
 
 import itertools
 import funcy
@@ -39,6 +39,35 @@ class Cursor(QWidget):
         painter.drawLine(QLineF(self.target.x(), 0,
                                 self.target.x(), self.height()))
 
+class ColormapPicker(QComboBox):
+    def __init__(self, original_name):
+        super().__init__()
+        self.setIconSize(QSize(256, self.fontMetrics().height()))
+        for name in mpl.colormaps.keys():
+            self.addItem(self.preview_icon(name), name)
+        self.setCurrentText(original_name)
+        self.previous_index = self.currentIndex()
+
+    def preview_icon(self, name):
+        cmap = cm.get_cmap(name)
+        image = QImage(self.iconSize().width(), 1, QImage.Format_ARGB32)
+        data = image.bits()
+        colors = cmap(np.linspace(0, 1, self.iconSize().width()), bytes=True)
+        for col, (r, g, b, a) in enumerate(colors):
+            i = 4 * col
+            data[i:i+4] = bytes([b, g, r, a])
+        return QIcon(QPixmap.fromImage(image.scaled(self.iconSize())))
+
+    def showPopup(self):
+        self.previous_index = self.currentIndex()
+        super().showPopup()
+
+    def hidePopup(self):
+        super().hidePopup()
+        self.setCurrentIndex(self.previous_index)
+        self.currentTextChanged.emit(self.currentText())
+
+
 class NewWindowDialog(QDialog):
     def __init__(self, fs):
         super().__init__()
@@ -63,35 +92,6 @@ class NewWindowDialog(QDialog):
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
         layout.addRow(buttons)
-
-class ColormapDialog(QDialog):
-    def __init__(self, parent, original_name):
-        super().__init__(parent)
-        self.icon_size = QSize(256, 32)
-
-        layout = QVBoxLayout(self)
-        self.colormap_name = QComboBox()
-        self.colormap_name.setIconSize(self.icon_size)
-        for name in mpl.colormaps.keys():
-            self.colormap_name.addItem(self.preview_icon(name), name)
-        self.colormap_name.setCurrentText(original_name)
-        layout.addWidget(self.colormap_name)
-
-        buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
-        buttons.accepted.connect(self.accept)
-        buttons.rejected.connect(self.reject)
-        layout.addWidget(buttons)
-
-    def preview_icon(self, name):
-        cmap = cm.get_cmap(name)
-        image = QImage(self.icon_size.width(), 1, QImage.Format_ARGB32)
-        data = image.bits()
-        colors = cmap(np.linspace(0, 1, self.icon_size.width()), bytes=True)
-        for col, (r, g, b, a) in enumerate(colors):
-            i = 4 * col
-            data[i:i+4] = bytes([b, g, r, a])
-        return QIcon(QPixmap.fromImage(image.scaled(self.icon_size)))
-
 
 class ImageViewer(QWidget):
     binHovered = Signal(QPoint)
@@ -206,11 +206,13 @@ class AudioWidget(QMainWindow):
         self.set_colormap_name('viridis')
         self.init_shortcuts()
         self.init_status_bar()
+        self.init_toolbar()
         self.update_thread = IterThread(self.process_audio())
 
 
     def init_shortcuts(self):
-        QShortcut(QKeySequence("c"), self, self.colormap_prompt)
+        pass
+
 
     def init_status_bar(self):
         self.frequency_label = QLabel()
@@ -221,17 +223,21 @@ class AudioWidget(QMainWindow):
         font.setFamily("monospace")
         self.frequency_label.setFont(font)
 
+
+    def init_toolbar(self):
+        tool_bar = self.addToolBar("Tool Bar")
+        tool_bar.setFloatable(False)
+
+        colormap_picker = ColormapPicker(self.colormap_name)
+        tool_bar.addWidget(colormap_picker)
+        colormap_picker.currentTextChanged.connect(self.set_colormap_name)
+        colormap_picker.textHighlighted.connect(self.set_colormap_name)
+
+
     def update_statusbar(self, bin_pos):
         f = self.audio.freqs[self.row_count - bin_pos.y() - 1]
         f_str = si_format(f, precision=1, format_str="{value}{prefix}Hz")
         self.frequency_label.setText(f"F={int(round(f)):5d} Hz")
-
-    def colormap_prompt(self):
-        def on_complete(dialog):
-            self.set_colormap_name(dialog.colormap_name.currentText())
-        dialog = ColormapDialog(self, self.colormap_name)
-        dialog.accepted.connect(lambda: on_complete(dialog))
-        dialog.open()
 
 
     def process_audio(self):
@@ -240,8 +246,10 @@ class AudioWidget(QMainWindow):
                 self.append_data(psd)
             yield
 
+
     def sizeHint(self):
         return self.maximumSize()
+
 
     def closeEvent(self, event):
         self.update_thread.close()
@@ -253,6 +261,7 @@ class AudioWidget(QMainWindow):
         return self.mapper.get_cmap().name
 
 
+    @funcy.print_durations
     def set_colormap_name(self, cmap_name):
         cmap = cm.get_cmap(cmap_name)
         norm = colors.BoundaryNorm(np.linspace(10, 34, 8), cmap.N)
@@ -290,7 +299,8 @@ class Context(QObject):
         self.broadcast_thread = IterThread(self.broadcast_loop())
         self.windows = set()
         self.app.aboutToQuit.connect(self.broadcast_thread.close)
-        self.new_window_prompt()
+        #self.new_window_prompt()
+        self.new_window(1024)
 
     def new_window_prompt(self):
         dialog = NewWindowDialog(self.fs)
