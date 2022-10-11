@@ -297,17 +297,22 @@ class AudioWidget(QMainWindow):
                 self.append_data(psd)
 
 
+    def map_colors(self, data):
+        # shape = data.shape + (4,)
+        rgba = np.array(self.mapper.to_rgba(data, bytes=True), dtype='u8')
+        # RGBA -(roll)-> ARGB -(flip)-> BGRA
+        bgra = np.flip(
+            np.roll(rgba, 1, axis=-1),
+            axis=-1)
+        # Flip vertically.
+        return np.flip(bgra, axis=0)
+
+
     def append_data(self, psd):
         self.data.append(psd)
         col = self.column_index
-        # shape = psd.shape + (4,)
-        pixel_colors = np.array(self.mapper.to_rgba(psd, bytes=True), dtype='u8')
-        # RGBA -(roll)-> ARGB -(flip)-> BGRA
-        pixel_colors = np.flip(
-            np.roll(pixel_colors, 1, axis=-1),
-            axis=-1)
         data = image_numpy_view(self.viewer.image)
-        data[:, col, :] = np.flip(pixel_colors, axis=0)
+        data[:, col, :] = self.map_colors(psd)
         self.column_index += 1
         self.column_index %= self.col_count
         self.viewer.update_logical_rect(QRectF(col, 0, 1, self.row_count))
