@@ -65,6 +65,22 @@ def serial_samples():
             yield np.frombuffer(binascii.a2b_base64(line), dtype='h')
 
 
+def simulated_samples():
+    from scipy.io import wavfile
+    import time
+    fs, data = wavfile.read('cardinal.wav')
+    mono = data.mean(axis=1)
+    n = len(mono)
+    chunk_size = 1000
+
+    while True:
+        for offset in range(0, n, chunk_size):
+            samples = mono[offset:min(n, offset+chunk_size)]
+            yield samples
+            time.sleep(len(samples) / fs)
+
+
+
 class AudioStream:
     def __init__(self, samples, fs, window_length):
         self.samples = samples

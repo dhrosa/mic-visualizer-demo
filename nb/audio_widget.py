@@ -13,7 +13,7 @@ from si_prefix import si_format
 from threading import Thread, Lock
 from collections import deque
 
-from audio_stream import IterThread, Broadcaster, AudioStream, serial_samples
+from audio_stream import IterThread, Broadcaster, AudioStream, serial_samples, simulated_samples
 
 class ImageBuffer:
     """
@@ -339,7 +339,7 @@ class Context(QObject):
         self.new_window(dialog.window_length.currentData())
 
     def broadcast_loop(self):
-        for samples in serial_samples():
+        for samples in simulated_samples():
             self.broadcaster.broadcast(samples)
             yield
 
