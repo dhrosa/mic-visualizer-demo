@@ -187,6 +187,7 @@ class ImageViewer(QWidget):
         self.cursor.update()
 
 
+
 class ScrollArea(QScrollArea):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -208,6 +209,24 @@ class ScrollArea(QScrollArea):
         self.zoom(0.5)
 
 
+class RotatingData:
+    def __init__(self, width, height, fill_value=0):
+        self._width = width
+        self._height = height
+        self._data = np.full((height, width), fill_value, dtype='float')
+        self._col = 0
+
+    def append(self, new_column):
+        self._data[:, self._col] = new_column
+        self._col = (self._col + 1) % self._width
+
+    @property
+    def buffers(self):
+        older = self._data[:, self._col:self._width]
+        newer = self._data[:, 0:self._col]
+        return older, newer
+
+
 class AudioWidget(QMainWindow):
     def __init__(self, samples, fs, window_length):
         super().__init__()
@@ -215,8 +234,7 @@ class AudioWidget(QMainWindow):
 
         self.row_count = len(self.audio.freqs)
         self.col_count = 1024
-        self.column_index = 0
-        self.data = deque(maxlen=self.col_count)
+        self.data = RotatingData(self.col_count, self.row_count, 11)
 
         self.viewer = ImageViewer()
         self.viewer.reset_image(self.col_count, self.row_count)
@@ -252,8 +270,8 @@ class AudioWidget(QMainWindow):
 
         colormap_picker = ColormapPicker(self.colormap_name)
         tool_bar.addWidget(colormap_picker)
-        colormap_picker.currentTextChanged.connect(self.set_colormap_name)
-        colormap_picker.textHighlighted.connect(self.set_colormap_name)
+        # colormap_picker.currentTextChanged.connect(self.set_colormap_name)
+        # colormap_picker.textHighlighted.connect(self.set_colormap_name)
 
 
     def update_statusbar(self, bin_pos):
@@ -264,10 +282,20 @@ class AudioWidget(QMainWindow):
 
     def process_audio(self):
         for psd in self.audio.psd_stream():
-            with self.viewer.image_lock:
-                self.append_data(psd)
+            self.data.append(psd)
+            self.render()
             yield
 
+    def render(self):
+        older, newer = self.data.buffers
+        split_point = older.shape[1]
+
+        with self.viewer.image_lock:
+            out = image_numpy_view(self.viewer.image)
+            out[:, 0:split_point] = self.mapper.to_rgba(older, bytes=True)
+            out[:, split_point:] = self.mapper.to_rgba(newer, bytes=True)
+
+        self.viewer.update()
 
     def sizeHint(self):
         return self.maximumSize()
@@ -288,14 +316,6 @@ class AudioWidget(QMainWindow):
         cmap = cm.get_cmap(cmap_name)
         norm = colors.BoundaryNorm(np.linspace(10, 34, 8), cmap.N)
         self.mapper = cm.ScalarMappable(norm, cmap)
-        # Redraw existing data with new colors
-        self.column_index = 0
-        data = self.data.copy()
-        self.data.clear()
-        with self.viewer.image_lock:
-            for psd in data:
-                self.append_data(psd)
-
 
     def map_colors(self, data):
         # shape = data.shape + (4,)
@@ -307,15 +327,6 @@ class AudioWidget(QMainWindow):
         # Flip vertically.
         return np.flip(bgra, axis=0)
 
-
-    def append_data(self, psd):
-        self.data.append(psd)
-        col = self.column_index
-        data = image_numpy_view(self.viewer.image)
-        data[:, col, :] = self.map_colors(psd)
-        self.column_index += 1
-        self.column_index %= self.col_count
-        self.viewer.update_logical_rect(QRectF(col, 0, 1, self.row_count))
 
 
 class Context(QObject):
