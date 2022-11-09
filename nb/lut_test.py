@@ -12,6 +12,18 @@ class LutEntryTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'empty'):
             table = Table([[]])
 
+    def test_too_few_dimensions(self):
+        with self.assertRaises(ValueError, msg='Array must be 2D:'):
+            table = Table(np.zeros((1, 1, 4)))
+
+    def test_too_few_color_channels(self):
+        with self.assertRaises(ValueError, msg='Innermost dimension must be 4: 3'):
+            table = Table(np.zeros((1, 3)))
+
+    def test_too_many_color_channels(self):
+        with self.assertRaises(ValueError, msg='Innermost dimension must b 4: 5'):
+            table = Table(np.zeros((1, 5)))
+
     def test_single(self):
         table = Table([[0x11, 0x22, 0x33, 0x44]])
         self.assertEqual([hex(e) for e in table.entries],

@@ -24,13 +24,13 @@ struct Table {
 
 Table FromRgbaArray(pybind11::array_t<uint8> arr) {
   if (arr.size() == 0) {
-    throw std::invalid_argument("Input is empty..");
+    throw std::invalid_argument("Input is empty.");
   }
   if (arr.ndim() != 2) {
     throw std::invalid_argument("Array must be 2D: " + std::to_string(arr.ndim()));
   }
   if (arr.shape(1) != 4) {
-    throw std::invalid_argument("Innermost dimension must be 4: " + std::to_string(arr.shape(0)));
+    throw std::invalid_argument("Innermost dimension must be 4: " + std::to_string(arr.shape(1)));
   }
   const pybind11::ssize_t rows = arr.shape(0);
   const auto view = arr.unchecked<2>();
