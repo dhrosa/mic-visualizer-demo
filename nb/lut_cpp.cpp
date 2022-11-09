@@ -52,6 +52,23 @@ Table FromRgbaArray(pybind11::array_t<uint8> arr) {
   return table;
 }
 
+inline void MapRow(double vmin, double vmax,
+                   const uint32* __restrict lut,
+                   pybind11::ssize_t lut_size,
+                   const double* source,
+                   uint32* __restrict dest,
+                   pybind11::ssize_t width) {
+  const double vrange = vmax - vmin;
+#pragma clang loop vectorize(enable) interleave(enable)
+  for (pybind11::ssize_t col = 0; col < width; ++col) {
+    const double clamped = std::clamp(source[col], vmin, vmax);
+    const double unbiased = clamped - vmin;
+    const double normalized = unbiased / vrange;
+    const pybind11::ssize_t index = normalized * (lut_size - 1);
+    dest[col] = lut[index];
+  }
+}
+
 void Table::Map(double vmin,
                 double vmax,
                 pybind11::array_t<double> source,
@@ -69,25 +86,24 @@ void Table::Map(double vmin,
       throw std::runtime_error("Source and destination have mismatched shapes: " + std::to_string(s) + " vs " + std::to_string(d));
     }
   }
-  const double vrange = vmax - vmin;
-  const int height = source.shape(0);
-  const int width = source.shape(1);
+  const pybind11::ssize_t height = source.shape(0);
+  const pybind11::ssize_t width = source.shape(1);
   const pybind11::ssize_t n = entries.size();
+  if (n == 0) {
+    return;
+  }
   const auto source_view = source.unchecked<2>();
   auto dest_view = dest.mutable_unchecked<2>();
   const uint32* lut = entries.data();
-  for (int row = 0; row < height; ++row) {
-    for (int col = 0; col < width; ++col) {
-      const double clamped = std::clamp(source_view(row, col), vmin, vmax);
-      const double unbiased = clamped - vmin;
-      const double normalized = unbiased / vrange;
-      const pybind11::ssize_t index = normalized * (n - 1);
-      dest_view(row, col) = lut[index];
-    }
+  for (pybind11::ssize_t row = 0; row < height; ++row) {
+    MapRow(vmin, vmax, lut, n,           
+           &source_view(row, 0),
+           &dest_view(row, 0),
+           width);
   }
 }
 
-PYBIND11_MODULE(lut, m) {
+PYBIND11_MODULE(lut_cpp, m) {
   pybind11::class_<Table>(m, "Table")
     .def(pybind11::init(&FromRgbaArray))
     .def_readonly("entries", &Table::entries)
@@ -100,7 +116,7 @@ PYBIND11_MODULE(lut, m) {
 
 /*
 <%
+cfg['extra_compile_args'] = ['-g', '-std=c++17', '-march=native', '-O3', '-Rpass=loop-vectorize', '-Rpass-missed=loop-vectorize', '-Rpass-analysis=loop-vectorize']
 setup_pybind11(cfg)
-cfg['extra_compile_args'] = ['-std=c++17']
 %>
 */

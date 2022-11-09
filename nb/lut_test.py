@@ -1,9 +1,6 @@
-import cppimport
 import unittest
 import numpy as np
 from numpy.testing import assert_equal as assert_array_equal
-
-lut = cppimport.imp_from_filepath("lut.cpp")
 
 from lut import Table
 
@@ -63,7 +60,6 @@ class LutMapTest(unittest.TestCase):
         assert_array_equal([[1, 1, 2],
                             [3, 4, 4]],
                            dest)
-
 
 if __name__ == '__main__':
     unittest.main()
