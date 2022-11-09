@@ -59,7 +59,7 @@ inline void MapRow(double vmin, double vmax,
                    uint32* __restrict dest,
                    pybind11::ssize_t width) {
   const double vrange = vmax - vmin;
-#pragma clang loop vectorize(enable) interleave(enable)
+#pragma clang loop vectorize(enable) interleave(enable) unroll(enable)
   for (pybind11::ssize_t col = 0; col < width; ++col) {
     const double clamped = std::clamp(source[col], vmin, vmax);
     const double unbiased = clamped - vmin;
@@ -116,7 +116,7 @@ PYBIND11_MODULE(lut_cpp, m) {
 
 /*
 <%
-cfg['extra_compile_args'] = ['-g', '-std=c++17', '-march=native', '-O3', '-Rpass=loop-vectorize', '-Rpass-missed=loop-vectorize', '-Rpass-analysis=loop-vectorize']
+cfg['extra_compile_args'] = ['-g', '-std=c++17', '-march=native', '-O3', '-Rpass=loop', '-Rpass-missed=loop', '-Rpass-analysis=loop']
 setup_pybind11(cfg)
 %>
 */
