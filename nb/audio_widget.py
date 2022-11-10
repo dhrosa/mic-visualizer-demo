@@ -14,11 +14,12 @@ from threading import Thread, Lock
 from collections import deque
 
 from audio_stream import IterThread, Broadcaster, AudioStream, serial_samples, simulated_samples
+from lut import Table
 
 class ImageBuffer:
     """
     Presents a numpy-compatible view of a QImage in
-    (row, column, channel) order.
+    (row, column) order as uint32 values.
     """
     def __init__(self, image):
         self.image = image
@@ -26,10 +27,10 @@ class ImageBuffer:
     @property
     def __array_interface__(self):
         return {
-            'typestr': '<u1',
+            'typestr': '<u4',
             'data': self.image.bits(),
-            'shape': (self.image.height(), self.image.width(), 4),
-            'strides': (self.image.bytesPerLine(), 4, 1),
+            'shape': (self.image.height(), self.image.width()),
+            'strides': (self.image.bytesPerLine(), 4),
         }
 
 
@@ -270,8 +271,8 @@ class AudioWidget(QMainWindow):
 
         colormap_picker = ColormapPicker(self.colormap_name)
         tool_bar.addWidget(colormap_picker)
-        # colormap_picker.currentTextChanged.connect(self.set_colormap_name)
-        # colormap_picker.textHighlighted.connect(self.set_colormap_name)
+        colormap_picker.currentTextChanged.connect(self.set_colormap_name)
+        colormap_picker.textHighlighted.connect(self.set_colormap_name)
 
 
     def update_statusbar(self, bin_pos):
@@ -292,8 +293,8 @@ class AudioWidget(QMainWindow):
 
         with self.viewer.image_lock:
             out = image_numpy_view(self.viewer.image)
-            out[:, 0:split_point] = self.mapper.to_rgba(older, bytes=True)
-            out[:, split_point:] = self.mapper.to_rgba(newer, bytes=True)
+            self.table.Map(10, 34, older, out[:, 0:split_point])
+            self.table.Map(10, 34, newer, out[:, split_point:])
 
         self.viewer.update()
 
@@ -308,25 +309,14 @@ class AudioWidget(QMainWindow):
 
     @property
     def colormap_name(self):
-        return self.mapper.get_cmap().name
+        return self._cmap_name
 
 
-    @funcy.print_durations
     def set_colormap_name(self, cmap_name):
+        self._cmap_name = cmap_name
         cmap = cm.get_cmap(cmap_name)
-        norm = colors.BoundaryNorm(np.linspace(10, 34, 8), cmap.N)
-        self.mapper = cm.ScalarMappable(norm, cmap)
-
-    def map_colors(self, data):
-        # shape = data.shape + (4,)
-        rgba = np.array(self.mapper.to_rgba(data, bytes=True), dtype='u8')
-        # RGBA -(roll)-> ARGB -(flip)-> BGRA
-        bgra = np.flip(
-            np.roll(rgba, 1, axis=-1),
-            axis=-1)
-        # Flip vertically.
-        return np.flip(bgra, axis=0)
-
+        self.table = Table(cmap(np.linspace(0, 1, 256, endpoint=True), bytes=True, alpha=1))
+        self.render()
 
 
 class Context(QObject):
