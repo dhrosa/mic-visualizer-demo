@@ -293,8 +293,8 @@ class AudioWidget(QMainWindow):
 
         with self.viewer.image_lock:
             out = image_numpy_view(self.viewer.image)
-            self.table.Map(10, 34, older, out[:, 0:split_point])
-            self.table.Map(10, 34, newer, out[:, split_point:])
+            self.table.Map(10, 34, np.flipud(older), out[:, 0:split_point])
+            self.table.Map(10, 34, np.flipud(newer), out[:, split_point:])
 
         self.viewer.update()
 
