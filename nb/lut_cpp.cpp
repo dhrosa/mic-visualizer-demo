@@ -7,6 +7,8 @@
 #include <stdexcept>
 #include <cstring>
 
+#include <omp.h>
+
 using uint8 = std::uint8_t;
 using uint32 = std::uint32_t;
 
@@ -95,6 +97,7 @@ void Table::Map(double vmin,
   const auto source_view = source.unchecked<2>();
   auto dest_view = dest.mutable_unchecked<2>();
   const uint32* lut = entries.data();
+#pragma omp parallel for
   for (pybind11::ssize_t row = 0; row < height; ++row) {
     MapRow(vmin, vmax, lut, n,           
            &source_view(row, 0),
@@ -116,7 +119,8 @@ PYBIND11_MODULE(lut_cpp, m) {
 
 /*
 <%
-cfg['extra_compile_args'] = ['-g', '-std=c++17', '-march=native', '-O3', '-Rpass=loop', '-Rpass-missed=loop', '-Rpass-analysis=loop']
+cfg['extra_compile_args'] = ['-g', '-std=c++17', '-march=native', '-O3', '-fopenmp=libomp']
+cfg['libraries'] = ['iomp5']
 setup_pybind11(cfg)
 %>
 */
