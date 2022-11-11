@@ -38,6 +38,19 @@ class ImageBuffer:
 def image_numpy_view(image):
     return np.array(ImageBuffer(image), copy=False)
 
+@funcy.memoize
+def unit_linspace(n):
+    return np.linspace(0, 1, n, endpoint=True)
+
+@funcy.memoize
+def horizontal_gradient(width, height):
+    return np.broadcast_to(unit_linspace(width), (height, width))
+
+@funcy.memoize
+def cmap_to_lut(cmap_name, n):
+    cmap = cm.get_cmap(cmap_name)
+    return Table(cmap(unit_linspace(n), bytes=True, alpha=1))
+    
 
 class Cursor(QWidget):
     def __init__(self, parent):
@@ -73,14 +86,15 @@ class ColormapPicker(QComboBox):
         self.previous_index = self.currentIndex()
 
     def preview_icon(self, name):
-        cmap = cm.get_cmap(name)
-        image = QImage(self.iconSize().width(), 1, QImage.Format_ARGB32)
-        data = image.bits()
-        colors = cmap(np.linspace(0, 1, self.iconSize().width()), bytes=True)
-        for col, (r, g, b, a) in enumerate(colors):
-            i = 4 * col
-            data[i:i+4] = bytes([b, g, r, a])
-        return QIcon(QPixmap.fromImage(image.scaled(self.iconSize())))
+        width = self.iconSize().width()
+        height = self.iconSize().height()
+        image = QImage(width, height, QImage.Format_ARGB32)
+        dest = image_numpy_view(image)
+
+        lut = cmap_to_lut(name, n=width)
+        lut.Map(0, 1, horizontal_gradient(width, height), dest)
+                                          
+        return QIcon(QPixmap.fromImage(image))
 
     def showPopup(self):
         self.previous_index = self.currentIndex()
@@ -328,8 +342,7 @@ class AudioWidget(QMainWindow):
 
     def set_colormap_name(self, cmap_name):
         self._cmap_name = cmap_name
-        cmap = cm.get_cmap(cmap_name)
-        self.table = Table(cmap(np.linspace(0, 1, 256, endpoint=True), bytes=True, alpha=1))
+        self.table = cmap_to_lut(cmap_name, 256)
         self.render()
 
 
