@@ -1,10 +1,11 @@
 from PySide6.QtCore import Qt, QKeyCombination, QLineF, QObject, QPoint, QPointF, QRect, QRectF, QSize, Signal
 from PySide6.QtGui import QColor, QIcon, QImage, QKeySequence, QPainter, QPen, QPixmap, QShortcut, QTransform
-from PySide6.QtWidgets import QApplication, QComboBox, QDialog, QDialogButtonBox, QDockWidget, QFormLayout, QLabel, QMainWindow, QRubberBand, QScrollArea, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QApplication, QCheckBox, QComboBox, QDialog, QDialogButtonBox, QDockWidget, QFormLayout, QLabel, QMainWindow, QRubberBand, QScrollArea, QVBoxLayout, QWidget
 
 import itertools
 import funcy
 import numpy as np
+from scipy import fft
 from math import floor
 
 from matplotlib import colors, cm
@@ -192,15 +193,20 @@ class ImageViewer(QWidget):
 class ScrollArea(QScrollArea):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.scale = 1
-        self.setSizeAdjustPolicy(QScrollArea.AdjustToContentsOnFirstShow)
+        self._scale = 1
+        self.set_fit_to_window(True)
         QShortcut(QKeySequence.ZoomIn, self, self.zoom_in)
         QShortcut(QKeySequence.ZoomOut, self, self.zoom_out)
 
+    def set_fit_to_window(self, fit):
+        self._fit = fit
+        self.setWidgetResizable(fit)
+        self.setSizeAdjustPolicy(QScrollArea.AdjustToContents if fit else QScrollArea.AdjustIgnored)
+        
     def zoom(self, factor):
-        self.scale *= factor
+        self._scale *= factor
         old_size = self.widget().size()
-        new_size = self.widget().sizeHint() * self.scale
+        new_size = self.widget().sizeHint() * _self.scale
         self.widget().resize(new_size)
 
     def zoom_in(self):
@@ -227,14 +233,18 @@ class RotatingData:
         newer = self._data[:, 0:self._col]
         return older, newer
 
+def largest_screen_size():
+    app = QApplication.instance()
+    sizes = [screen.size() for screen in app.screens()]
+    return max(sizes, key=lambda s: s.width() * s.height())
 
 class AudioWidget(QMainWindow):
     def __init__(self, samples, fs, window_length):
         super().__init__()
-        self.audio = AudioStream(samples, fs, window_length)
-
+        screen_size = largest_screen_size()
+        self.audio = AudioStream(samples, fs, window_length)        
         self.row_count = len(self.audio.freqs)
-        self.col_count = 1024
+        self.col_count = screen_size.width()
         self.data = RotatingData(self.col_count, self.row_count, 11)
 
         self.viewer = ImageViewer()
@@ -270,9 +280,13 @@ class AudioWidget(QMainWindow):
         tool_bar.setFloatable(False)
 
         colormap_picker = ColormapPicker(self.colormap_name)
-        tool_bar.addWidget(colormap_picker)
         colormap_picker.currentTextChanged.connect(self.set_colormap_name)
         colormap_picker.textHighlighted.connect(self.set_colormap_name)
+        tool_bar.addWidget(colormap_picker)
+
+        fit_button = QCheckBox("Fit To Window")
+        tool_bar.addWidget(fit_button)
+        
 
 
     def update_statusbar(self, bin_pos):

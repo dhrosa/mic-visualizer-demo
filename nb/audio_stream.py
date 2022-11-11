@@ -80,13 +80,13 @@ def simulated_samples():
             time.sleep(len(samples) / fs)
 
 
-
 class AudioStream:
     def __init__(self, samples, fs, window_length):
         self.samples = samples
         self.fs = fs
         self.window_length = window_length
-        self.freqs = np.linspace(0, self.fs / 2, (self.window_length // 2) + 1)
+        n = (self.window_length // 2 + 1) if window_length % 2 == 0 else ((self.window_length + 1) // 2)
+        self.freqs = np.linspace(0, self.fs / 2, n)
 
     def frame_stream(self):
         accum = []
