@@ -97,6 +97,7 @@ class AudioStream:
                 yield framed
 
     def psd_stream(self):
+        from scipy import fft
         # Real-valued FFT should have doubled energy everywhere except
         # at DC and Fs, which are not symmetric.
         sym = np.full_like(self.freqs, 2)
@@ -104,7 +105,7 @@ class AudioStream:
         sym[-1] = 1
         norm = sym / self.window_length
         for s in self.frame_stream():
-            spectrum = np.abs(np.fft.rfft(s)) ** 2
+            spectrum = np.abs(fft.rfft(s)) ** 2
             psd = spectrum * norm
             log_psd = np.log2(1+psd)
             yield pd.Series(log_psd, index=self.freqs)
