@@ -1,5 +1,6 @@
+from math import floor
 from threading import Lock
-from PySide6.QtCore import QRectF, Signal, QPoint
+from PySide6.QtCore import QRectF, Signal, QPoint, QPointF
 from PySide6.QtGui import QImage, QPainter, QTransform
 from PySide6.QtWidgets import QWidget
 
