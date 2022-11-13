@@ -6,7 +6,6 @@ from PySide6.QtWidgets import QApplication
 
 
 def main():
-    import audio_widget
     app = QApplication(sys.argv)
     context = Context(app)
     sys.exit(app.exec())

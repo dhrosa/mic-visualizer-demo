@@ -28,7 +28,7 @@ def largest_screen_size():
     sizes = [screen.size() for screen in app.screens()]
     return max(sizes, key=lambda s: s.width() * s.height())
 
-class AudioWidget(QMainWindow):
+class MainWindow(QMainWindow):
     def __init__(self, samples, fs, window_length):
         super().__init__()
         screen_size = largest_screen_size()
