@@ -22,24 +22,8 @@ from gui.colormap_picker import ColormapPicker
 from gui.image_viewer import ImageViewer
 from gui.scroll_area import ScrollArea
 from image import cmap_to_lut, image_numpy_view
+from circular_buffer import CircularBuffer
 
-
-class RotatingData:
-    def __init__(self, width, height, fill_value=0):
-        self._width = width
-        self._height = height
-        self._data = np.full((height, width), fill_value, dtype='float')
-        self._col = 0
-
-    def append(self, new_column):
-        self._data[:, self._col] = new_column
-        self._col = (self._col + 1) % self._width
-
-    @property
-    def buffers(self):
-        older = self._data[:, self._col:self._width]
-        newer = self._data[:, 0:self._col]
-        return older, newer
 
 def largest_screen_size():
     app = QApplication.instance()
@@ -53,7 +37,7 @@ class AudioWidget(QMainWindow):
         self.audio = AudioStream(samples, fs, window_length)        
         self.row_count = len(self.audio.freqs)
         self.col_count = screen_size.width()
-        self.data = RotatingData(self.col_count, self.row_count, 11)
+        self.data = CircularBuffer(self.col_count, self.row_count, 11)
 
         self.viewer = ImageViewer()
         self.viewer.reset_image(self.col_count, self.row_count)
