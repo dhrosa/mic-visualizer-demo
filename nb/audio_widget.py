@@ -17,93 +17,9 @@ from collections import deque
 from audio_stream import IterThread, Broadcaster, AudioStream, serial_samples, simulated_samples
 from lut import Table
 
-class ImageBuffer:
-    """
-    Presents a numpy-compatible view of a QImage in
-    (row, column) order as uint32 values.
-    """
-    def __init__(self, image):
-        self.image = image
-
-    @property
-    def __array_interface__(self):
-        return {
-            'typestr': '<u4',
-            'data': self.image.bits(),
-            'shape': (self.image.height(), self.image.width()),
-            'strides': (self.image.bytesPerLine(), 4),
-        }
-
-
-def image_numpy_view(image):
-    return np.array(ImageBuffer(image), copy=False)
-
-@funcy.memoize
-def unit_linspace(n):
-    return np.linspace(0, 1, n, endpoint=True)
-
-@funcy.memoize
-def horizontal_gradient(width, height):
-    return np.broadcast_to(unit_linspace(width), (height, width))
-
-@funcy.memoize
-def cmap_to_lut(cmap_name, n):
-    cmap = cm.get_cmap(cmap_name)
-    return Table(cmap(unit_linspace(n), bytes=True, alpha=1))
-    
-
-class Cursor(QWidget):
-    def __init__(self, parent):
-        super().__init__(parent)
-        self.setAttribute(Qt.WA_TransparentForMouseEvents)
-        self.setAttribute(Qt.WA_NoSystemBackground)
-        self.setVisible(False)
-
-        self.target = QPointF(0, 0)
-
-    def paintEvent(self, event):
-        painter = QPainter(self)
-        pen = QPen()
-        pen.setDashPattern([10, 10])
-        pen.setCapStyle(Qt.FlatCap)
-        pen.setColor(QColor.fromHslF(0, 0, 0.5, 0.5))
-        painter.setPen(pen)
-
-        # Horizontal
-        painter.drawLine(QLineF(0, self.target.y(),
-                                self.width(), self.target.y()))
-        # Vertical
-        painter.drawLine(QLineF(self.target.x(), 0,
-                                self.target.x(), self.height()))
-
-class ColormapPicker(QComboBox):
-    def __init__(self, original_name):
-        super().__init__()
-        self.setIconSize(QSize(256, self.fontMetrics().height()))
-        for name in mpl.colormaps.keys():
-            self.addItem(self.preview_icon(name), name)
-        self.setCurrentText(original_name)
-        self.previous_index = self.currentIndex()
-
-    def preview_icon(self, name):
-        width = self.iconSize().width()
-        height = self.iconSize().height()
-        image = QImage(width, height, QImage.Format_ARGB32)
-        dest = image_numpy_view(image)
-
-        lut = cmap_to_lut(name, n=width)
-        lut.Map(0, 1, horizontal_gradient(width, height), dest)
-                                          
-        return QIcon(QPixmap.fromImage(image))
-
-    def showPopup(self):
-        self.previous_index = self.currentIndex()
-        super().showPopup()
-
-    def hidePopup(self):
-        super().hidePopup()
-        self.setCurrentIndex(self.previous_index)
-        self.currentTextChanged.emit(self.currentText())
+from gui.cursor import Cursor
+from gui.colormap_picker import ColormapPicker
+from image import cmap_to_lut, image_numpy_view
 
 
 class NewWindowDialog(QDialog):
