@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import QApplication, QCheckBox, QLabel, QMainWindow
+from PySide6.QtWidgets import QApplication, QCheckBox, QLabel, QMainWindow, QSpinBox, QVBoxLayout, QWidget
 import numpy as np
 from si_prefix import si_format
 
@@ -21,6 +21,7 @@ def _largest_screen_size():
 class MainWindow(QMainWindow):
     def __init__(self, samples, fs, window_length):
         super().__init__()
+        self._fs = fs
         self.audio = AudioStream(samples, fs, window_length)
         self.row_count = len(self.audio.freqs)
         self.col_count = _largest_screen_size().width()
@@ -60,6 +61,22 @@ class MainWindow(QMainWindow):
 
         fit_button = QCheckBox("Fit To Window")
         tool_bar.addWidget(fit_button)
+
+        fmin_parent, fmin_spinner = self._freq_input("Minimum frequency")
+        fmax_parent, fmax_spinner = self._freq_input("Maximum frequency")
+        tool_bar.addWidget(fmin_parent)
+        tool_bar.addWidget(fmax_parent)
+
+
+    def _freq_input(self, label_text):
+        parent = QWidget()
+        layout = QVBoxLayout(parent)
+        layout.addWidget(QLabel(label_text))
+        spinner = QSpinBox()
+        spinner.setSuffix(" Hz")
+        spinner.setMaximum(self._fs)
+        layout.addWidget(spinner)
+        return parent, spinner
 
 
     def update_statusbar(self, bin_pos):
