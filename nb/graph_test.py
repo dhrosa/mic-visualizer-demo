@@ -1,6 +1,6 @@
 import sys
 
-from audio_widget import Context
+from context import Context
 
 from PySide6.QtWidgets import QApplication
 

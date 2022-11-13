@@ -14,16 +14,14 @@ from si_prefix import si_format
 from threading import Thread, Lock
 from collections import deque
 
-from audio_stream import IterThread, Broadcaster, AudioStream, serial_samples, simulated_samples
 from lut import Table
-
+from audio_stream import AudioStream, IterThread
 from gui.cursor import Cursor
 from gui.colormap_picker import ColormapPicker
 from gui.image_viewer import ImageViewer
 from gui.scroll_area import ScrollArea
 from image import cmap_to_lut, image_numpy_view
 from circular_buffer import CircularBuffer
-
 
 def largest_screen_size():
     app = QApplication.instance()
@@ -122,27 +120,3 @@ class AudioWidget(QMainWindow):
         self._cmap_name = cmap_name
         self.table = cmap_to_lut(cmap_name, 256)
         self.render()
-
-
-class Context(QObject):
-    def __init__(self, app):
-        super().__init__()
-        self.app = app
-        self.fs = 24_000
-        self.broadcaster = Broadcaster()
-        self.broadcast_thread = IterThread(self.broadcast_loop())
-        self.windows = set()
-        self.app.aboutToQuit.connect(self.broadcast_thread.close)
-        self.new_window(1024)
-
-    def broadcast_loop(self):
-        for samples in simulated_samples():
-            self.broadcaster.broadcast(samples)
-            yield
-
-    def new_window(self, window_length):
-        w = AudioWidget(self.broadcaster.subscribe(), self.fs, window_length)
-        QShortcut(QKeySequence.Close, w, w.close)
-        QShortcut(QKeySequence.Quit, w, self.app.closeAllWindows)
-        self.windows.add(w)
-        w.show()

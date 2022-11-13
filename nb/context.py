@@ -1,0 +1,27 @@
+from PySide6.QtCore import QObject
+from PySide6.QtGui import QKeySequence, QShortcut
+from audio_stream import IterThread, Broadcaster, serial_samples, simulated_samples
+from audio_widget import AudioWidget
+
+class Context(QObject):
+    def __init__(self, app):
+        super().__init__()
+        self.app = app
+        self.fs = 24_000
+        self.broadcaster = Broadcaster()
+        self.broadcast_thread = IterThread(self.broadcast_loop())
+        self.windows = set()
+        self.app.aboutToQuit.connect(self.broadcast_thread.close)
+        self.new_window(1024)
+
+    def broadcast_loop(self):
+        for samples in simulated_samples():
+            self.broadcaster.broadcast(samples)
+            yield
+
+    def new_window(self, window_length):
+        w = AudioWidget(self.broadcaster.subscribe(), self.fs, window_length)
+        QShortcut(QKeySequence.Close, w, w.close)
+        QShortcut(QKeySequence.Quit, w, self.app.closeAllWindows)
+        self.windows.add(w)
+        w.show()
