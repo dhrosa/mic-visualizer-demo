@@ -22,31 +22,6 @@ from gui.colormap_picker import ColormapPicker
 from image import cmap_to_lut, image_numpy_view
 
 
-class NewWindowDialog(QDialog):
-    def __init__(self, fs):
-        super().__init__()
-        layout = QFormLayout(self)
-        layout.addRow("Sample Rate", QLabel(str(fs)))
-
-        self.window_length = QComboBox()
-        default_value = 1024
-        default_index = 0
-        for i, power in enumerate(range(8, 16)):
-            val = 1 << power
-            if val == default_value:
-                default_index = i
-            duration = si_format(val / fs, precision=1)
-            freq = si_format(fs / val, precision=1)
-            text = f'{val} samples / {duration}s / {freq}Hz)'
-            self.window_length.addItem(text, val)
-        self.window_length.setCurrentIndex(default_index)
-        layout.addRow("FFT window length", self.window_length)
-
-        buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
-        buttons.accepted.connect(self.accept)
-        buttons.rejected.connect(self.reject)
-        layout.addRow(buttons)
-
 class ImageViewer(QWidget):
     binHovered = Signal(QPoint)
 
@@ -271,26 +246,15 @@ class Context(QObject):
         self.broadcast_thread = IterThread(self.broadcast_loop())
         self.windows = set()
         self.app.aboutToQuit.connect(self.broadcast_thread.close)
-        #self.new_window_prompt()
         self.new_window(1024)
-
-    def new_window_prompt(self):
-        dialog = NewWindowDialog(self.fs)
-        dialog.accepted.connect(lambda: self.new_window_prompt_complete(dialog))
-        dialog.open()
-
-    def new_window_prompt_complete(self, dialog):
-        self.new_window(dialog.window_length.currentData())
 
     def broadcast_loop(self):
         for samples in simulated_samples():
             self.broadcaster.broadcast(samples)
             yield
 
-
     def new_window(self, window_length):
         w = AudioWidget(self.broadcaster.subscribe(), self.fs, window_length)
-        QShortcut(QKeySequence.New, w, self.new_window_prompt)
         QShortcut(QKeySequence.Close, w, w.close)
         QShortcut(QKeySequence.Quit, w, self.app.closeAllWindows)
         self.windows.add(w)
