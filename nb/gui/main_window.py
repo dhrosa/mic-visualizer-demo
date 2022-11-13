@@ -3,7 +3,8 @@ import numpy as np
 from si_prefix import si_format
 
 from lut import Table
-from audio_stream import AudioStream, IterThread
+from audio_stream import AudioStream
+from iter_thread import IterThread
 from gui.cursor import Cursor
 from gui.colormap_picker import ColormapPicker
 from gui.image_viewer import ImageViewer
@@ -20,7 +21,7 @@ def _largest_screen_size():
 class MainWindow(QMainWindow):
     def __init__(self, samples, fs, window_length):
         super().__init__()
-        self.audio = AudioStream(samples, fs, window_length)        
+        self.audio = AudioStream(samples, fs, window_length)
         self.row_count = len(self.audio.freqs)
         self.col_count = _largest_screen_size().width()
         self.data = CircularBuffer(self.col_count, self.row_count, 11)
@@ -59,7 +60,7 @@ class MainWindow(QMainWindow):
 
         fit_button = QCheckBox("Fit To Window")
         tool_bar.addWidget(fit_button)
-        
+
 
     def update_statusbar(self, bin_pos):
         f = self.audio.freqs[self.row_count - bin_pos.y() - 1]
@@ -84,11 +85,11 @@ class MainWindow(QMainWindow):
 
         self.viewer.update()
 
-        
+
     def sizeHint(self):
         return self.maximumSize()
 
-    
+
     def closeEvent(self, event):
         self.update_thread.close()
         event.accept()

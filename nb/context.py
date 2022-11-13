@@ -1,6 +1,7 @@
 from PySide6.QtCore import QObject
 from PySide6.QtGui import QKeySequence, QShortcut
-from audio_stream import IterThread, Broadcaster
+from broadcaster import Broadcaster
+from iter_thread import IterThread
 from sample_source import simulated_samples
 from gui.main_window import MainWindow
 
