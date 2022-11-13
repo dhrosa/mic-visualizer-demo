@@ -1,18 +1,6 @@
-from PySide6.QtCore import Qt, QKeyCombination, QLineF, QObject, QPoint, QPointF, QRect, QRectF, QSize, Signal
-from PySide6.QtGui import QColor, QIcon, QImage, QKeySequence, QPainter, QPen, QPixmap, QShortcut, QTransform
-from PySide6.QtWidgets import QApplication, QCheckBox, QComboBox, QDialog, QDialogButtonBox, QDockWidget, QFormLayout, QLabel, QMainWindow, QRubberBand, QScrollArea, QVBoxLayout, QWidget
-
-import itertools
-import funcy
+from PySide6.QtWidgets import QApplication, QCheckBox, QLabel, QMainWindow
 import numpy as np
-from scipy import fft
-from math import floor
-
-from matplotlib import colors, cm
-import matplotlib as mpl
 from si_prefix import si_format
-from threading import Thread, Lock
-from collections import deque
 
 from lut import Table
 from audio_stream import AudioStream, IterThread
@@ -23,18 +11,18 @@ from gui.scroll_area import ScrollArea
 from image import cmap_to_lut, image_numpy_view
 from circular_buffer import CircularBuffer
 
-def largest_screen_size():
+def _largest_screen_size():
     app = QApplication.instance()
     sizes = [screen.size() for screen in app.screens()]
     return max(sizes, key=lambda s: s.width() * s.height())
 
+
 class MainWindow(QMainWindow):
     def __init__(self, samples, fs, window_length):
         super().__init__()
-        screen_size = largest_screen_size()
         self.audio = AudioStream(samples, fs, window_length)        
         self.row_count = len(self.audio.freqs)
-        self.col_count = screen_size.width()
+        self.col_count = _largest_screen_size().width()
         self.data = CircularBuffer(self.col_count, self.row_count, 11)
 
         self.viewer = ImageViewer()
@@ -45,14 +33,9 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(self.scroll_area)
 
         self.set_colormap_name('viridis')
-        self.init_shortcuts()
         self.init_status_bar()
         self.init_toolbar()
         self.update_thread = IterThread(self.process_audio())
-
-
-    def init_shortcuts(self):
-        pass
 
 
     def init_status_bar(self):
@@ -78,7 +61,6 @@ class MainWindow(QMainWindow):
         tool_bar.addWidget(fit_button)
         
 
-
     def update_statusbar(self, bin_pos):
         f = self.audio.freqs[self.row_count - bin_pos.y() - 1]
         f_str = si_format(f, precision=1, format_str="{value}{prefix}Hz")
@@ -91,10 +73,10 @@ class MainWindow(QMainWindow):
             self.render()
             yield
 
+
     def render(self):
         older, newer = self.data.buffers
         split_point = older.shape[1]
-
         with self.viewer.image_lock:
             out = image_numpy_view(self.viewer.image)
             self.table.Map(10, 34, np.flipud(older), out[:, 0:split_point])
@@ -102,10 +84,11 @@ class MainWindow(QMainWindow):
 
         self.viewer.update()
 
+        
     def sizeHint(self):
         return self.maximumSize()
 
-
+    
     def closeEvent(self, event):
         self.update_thread.close()
         event.accept()
