@@ -10,5 +10,6 @@ def main():
     context = Context(app)
     sys.exit(app.exec())
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()

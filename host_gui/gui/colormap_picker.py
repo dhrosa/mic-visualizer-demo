@@ -7,9 +7,11 @@ from funcy import memoize
 
 from image import image_numpy_view, cmap_to_lut, unit_linspace
 
+
 @memoize
 def _horizontal_gradient(width, height):
     return np.broadcast_to(unit_linspace(width), (height, width))
+
 
 class ColormapPicker(QComboBox):
     def __init__(self, original_name):
@@ -28,7 +30,7 @@ class ColormapPicker(QComboBox):
 
         lut = cmap_to_lut(name, n=width)
         lut.Map(0, 1, _horizontal_gradient(width, height), dest)
-                                          
+
         return QIcon(QPixmap.fromImage(image))
 
     def showPopup(self):

@@ -1,6 +1,7 @@
 import os
-os.environ['CC'] = 'clang'
-os.environ['CXX'] = 'clang++'
+
+os.environ["CC"] = "clang"
+os.environ["CXX"] = "clang++"
 
 import cppimport
 

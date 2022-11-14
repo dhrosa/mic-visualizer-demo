@@ -1,6 +1,7 @@
 from PySide6.QtGui import QKeySequence, QShortcut
 from PySide6.QtWidgets import QScrollArea
 
+
 class ScrollArea(QScrollArea):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -12,8 +13,10 @@ class ScrollArea(QScrollArea):
     def set_fit_to_window(self, fit):
         self._fit = fit
         self.setWidgetResizable(fit)
-        self.setSizeAdjustPolicy(QScrollArea.AdjustToContents if fit else QScrollArea.AdjustIgnored)
-        
+        self.setSizeAdjustPolicy(
+            QScrollArea.AdjustToContents if fit else QScrollArea.AdjustIgnored
+        )
+
     def zoom(self, factor):
         self._scale *= factor
         old_size = self.widget().size()

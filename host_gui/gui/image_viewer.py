@@ -6,6 +6,7 @@ from PySide6.QtWidgets import QWidget
 
 from gui.cursor import Cursor
 
+
 class ImageViewer(QWidget):
     binHovered = Signal(QPoint)
 
@@ -16,52 +17,45 @@ class ImageViewer(QWidget):
         self.setMouseTracking(True)
         self.cursor = Cursor(self)
 
-
     def reset_image(self, width, height, fill_color=0xFF_00_00_00):
         self.image = QImage(width, height, QImage.Format_ARGB32)
         self.image.fill(fill_color)
 
-
     def update_logical_rect(self, rect):
         self.update(self.logical_to_widget_transform.mapRect(rect).toAlignedRect())
-
 
     @property
     def logical_to_widget_transform(self):
         return QTransform.fromScale(
-            self.width() / self.image.width(),
-            self.height() / self.image.height())
-
+            self.width() / self.image.width(), self.height() / self.image.height()
+        )
 
     @property
     def widget_to_logical_transform(self):
         return QTransform.fromScale(
-            self.image.width() / self.width(),
-            self.image.height() / self.height())
-
+            self.image.width() / self.width(), self.image.height() / self.height()
+        )
 
     def paintEvent(self, event):
         painter = QPainter(self)
         with self.image_lock:
             dest_rect = event.rect()
-            source_rect = self.widget_to_logical_transform.mapRect(QRectF(dest_rect)).toAlignedRect()
+            source_rect = self.widget_to_logical_transform.mapRect(
+                QRectF(dest_rect)
+            ).toAlignedRect()
             painter.setWindow(self.image.rect())
             painter.drawImage(source_rect.topLeft(), self.image, source_rect)
-
 
     def moveEvent(self, event):
         self.update()
         super().moveEvent(event)
 
-
     def sizeHint(self):
         return self.image.size()
-
 
     def enterEvent(self, event):
         self.cursor.show()
         self.cursor.raise_()
-
 
     def mouseMoveEvent(self, event):
         widget_pos = QPointF(event.pos())
@@ -73,6 +67,7 @@ class ImageViewer(QWidget):
 
         # Snap cursor to midpoint of pixel rectangle.
         self.cursor.target = self.logical_to_widget_transform.map(
-            QPointF(snapped_image_pos) + QPointF(0.5, 0.5))
+            QPointF(snapped_image_pos) + QPointF(0.5, 0.5)
+        )
         self.cursor.setGeometry(0, 0, self.width(), self.height())
         self.cursor.update()

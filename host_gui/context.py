@@ -5,6 +5,7 @@ from iter_thread import IterThread
 from sample_source import simulated_samples
 from gui.main_window import MainWindow
 
+
 class Context(QObject):
     def __init__(self, app):
         super().__init__()

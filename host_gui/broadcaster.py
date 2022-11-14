@@ -1,6 +1,7 @@
 from threading import Lock
 from queue import Queue
 
+
 class Broadcaster:
     def __init__(self):
         self.sinks_lock = Lock()

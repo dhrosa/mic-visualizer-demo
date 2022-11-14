@@ -1,6 +1,7 @@
 from threading import Thread
 from inspect import isgenerator, isgeneratorfunction
 
+
 class IterThread(Thread):
     def __init__(self, gen):
         super().__init__()

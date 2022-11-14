@@ -2,6 +2,7 @@ import unittest
 from circular_buffer import CircularBuffer
 from numpy.testing import assert_array_equal
 
+
 def assert_buffers(data, older, newer):
     a, b = data.buffers
     assert_array_equal(a, older)
@@ -13,10 +14,15 @@ class CircularBufferTest(unittest.TestCase):
         data = CircularBuffer(3, 2)
         assert_buffers(
             data,
-            older=[[0, 0, 0],
-                   [0, 0, 0]],
-            newer = [[],
-                     []])
+            older=[
+                [0, 0, 0],
+                [0, 0, 0],
+            ],
+            newer=[
+                [],
+                [],
+            ],
+        )
 
     def test_single_append(self):
         data = CircularBuffer(3, 2)
@@ -24,10 +30,15 @@ class CircularBufferTest(unittest.TestCase):
 
         assert_buffers(
             data,
-            older=[[0, 0],
-                   [0, 0]],
-            newer=[[1],
-                   [2]])
+            older=[
+                [0, 0],
+                [0, 0],
+            ],
+            newer=[
+                [1],
+                [2],
+            ],
+        )
 
     def test_double_append(self):
         data = CircularBuffer(3, 2)
@@ -36,10 +47,15 @@ class CircularBufferTest(unittest.TestCase):
 
         assert_buffers(
             data,
-            older=[[0],
-                   [0]],
-            newer=[[1, 3],
-                   [2, 4]])
+            older=[
+                [0],
+                [0],
+            ],
+            newer=[
+                [1, 3],
+                [2, 4],
+            ],
+        )
 
     def test_complete_cycle(self):
         data = CircularBuffer(3, 2)
@@ -49,10 +65,15 @@ class CircularBufferTest(unittest.TestCase):
 
         assert_buffers(
             data,
-            older=[[1, 3, 5],
-                   [2, 4, 6]],
-            newer=[[],
-                   []])
+            older=[
+                [1, 3, 5],
+                [2, 4, 6],
+            ],
+            newer=[
+                [],
+                [],
+            ],
+        )
 
     def test_rollover(self):
         data = CircularBuffer(3, 2)
@@ -63,11 +84,16 @@ class CircularBufferTest(unittest.TestCase):
 
         assert_buffers(
             data,
-            older=[[3, 5],
-                   [4, 6]],
-            newer=[[7],
-                   [8]])
+            older=[
+                [3, 5],
+                [4, 6],
+            ],
+            newer=[
+                [7],
+                [8],
+            ],
+        )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
