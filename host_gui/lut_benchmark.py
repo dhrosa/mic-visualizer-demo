@@ -1,5 +1,11 @@
+import cppimport
 import logging
 import sys
+import numpy as np
+import timeit
+from argparse import ArgumentParser
+from si_prefix import si_format
+
 
 root_logger = logging.getLogger()
 root_logger.setLevel(logging.DEBUG)
@@ -10,16 +16,9 @@ formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(messag
 handler.setFormatter(formatter)
 root_logger.addHandler(handler)
 
-import cppimport
-
 cppimport.settings["force_rebuild"] = True
 
-from lut import Table
-
-import numpy as np
-import timeit
-from argparse import ArgumentParser
-from si_prefix import si_format
+from lut import Table # noqa: 402
 
 if __name__ == "__main__":
     parser = ArgumentParser(description="Benchmark for C++ LUT implementation")

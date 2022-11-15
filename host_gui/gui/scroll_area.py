@@ -19,8 +19,7 @@ class ScrollArea(QScrollArea):
 
     def zoom(self, factor):
         self._scale *= factor
-        old_size = self.widget().size()
-        new_size = self.widget().sizeHint() * _self.scale
+        new_size = self.widget().sizeHint() * self._scale
         self.widget().resize(new_size)
 
     def zoom_in(self):

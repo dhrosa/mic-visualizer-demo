@@ -8,12 +8,9 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 import numpy as np
-from si_prefix import si_format
 
-from lut import Table
 from audio_stream import AudioStream
 from iter_thread import IterThread
-from gui.cursor import Cursor
 from gui.colormap_picker import ColormapPicker
 from gui.image_viewer import ImageViewer
 from gui.scroll_area import ScrollArea
@@ -86,7 +83,6 @@ class MainWindow(QMainWindow):
 
     def update_statusbar(self, bin_pos):
         f = self.audio.freqs[self.row_count - bin_pos.y() - 1]
-        f_str = si_format(f, precision=1, format_str="{value}{prefix}Hz")
         self.frequency_label.setText(f"F={int(round(f)):5d} Hz")
 
     def process_audio(self):

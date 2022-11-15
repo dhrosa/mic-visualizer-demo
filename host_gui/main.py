@@ -7,7 +7,7 @@ from PySide6.QtWidgets import QApplication
 
 def main():
     app = QApplication(sys.argv)
-    context = Context(app)
+    Context(app)
     sys.exit(app.exec())
 
 
