@@ -97,6 +97,7 @@ void Table::Map(double vmin,
   const auto source_view = source.unchecked<2>();
   auto dest_view = dest.mutable_unchecked<2>();
   const uint32* lut = entries.data();
+  pybind11::gil_scoped_release gil_release;
 #pragma omp parallel for schedule(nonmonotonic:guided)
   for (pybind11::ssize_t row = 0; row < height; ++row) { 
     MapRow(vmin, vmax, lut, n,           
