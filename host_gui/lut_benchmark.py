@@ -23,7 +23,7 @@ from lut import Table # noqa: 402
 if __name__ == "__main__":
     parser = ArgumentParser(description="Benchmark for C++ LUT implementation")
     parser.add_argument(
-        "--lut_size", type=int, default=100, help="Number of entries in lookup table."
+        "--lut_size", type=int, default=256, help="Number of entries in lookup table."
     )
     parser.add_argument("--width", type=int, default=3840, help="Width of destination.")
     parser.add_argument(
