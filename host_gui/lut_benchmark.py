@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import cppimport
 import logging
 import sys
@@ -18,7 +20,7 @@ root_logger.addHandler(handler)
 
 cppimport.settings["force_rebuild"] = True
 
-from lut import Table # noqa: 402
+from lut import Table  # noqa: 402
 
 if __name__ == "__main__":
     parser = ArgumentParser(description="Benchmark for C++ LUT implementation")
