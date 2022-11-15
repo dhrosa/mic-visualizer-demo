@@ -1,7 +1,6 @@
 from PySide6.QtCore import QSize
 from PySide6.QtGui import QIcon, QImage, QPixmap
 from PySide6.QtWidgets import QComboBox
-from matplotlib import colormaps
 import numpy as np
 from funcy import memoize
 
@@ -13,11 +12,56 @@ def _horizontal_gradient(width, height):
     return np.broadcast_to(unit_linspace(width), (height, width))
 
 
+# Sequential colormaps from
+# https://matplotlib.org/stable/tutorials/colors/colormaps.html#classes-of-colormaps
+_cmap_names = [
+    "viridis",
+    "plasma",
+    "inferno",
+    "magma",
+    "cividis",
+    "Greys",
+    "Purples",
+    "Blues",
+    "Greens",
+    "Oranges",
+    "Reds",
+    "YlOrBr",
+    "YlOrRd",
+    "OrRd",
+    "PuRd",
+    "RdPu",
+    "BuPu",
+    "GnBu",
+    "PuBu",
+    "YlGnBu",
+    "PuBuGn",
+    "BuGn",
+    "YlGn",
+    "binary",
+    "gist_yarg",
+    "gist_gray",
+    "gray",
+    "bone",
+    "pink",
+    "spring",
+    "summer",
+    "autumn",
+    "winter",
+    "cool",
+    "Wistia",
+    "hot",
+    "afmhot",
+    "gist_heat",
+    "copper",
+]
+
+
 class ColormapPicker(QComboBox):
     def __init__(self, original_name):
         super().__init__()
         self.setIconSize(QSize(256, self.fontMetrics().height()))
-        for name in colormaps.keys():
+        for name in _cmap_names:
             self.addItem(self.preview_icon(name), name)
         self.setCurrentText(original_name)
         self.previous_index = self.currentIndex()
