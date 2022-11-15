@@ -25,9 +25,9 @@ if __name__ == "__main__":
     parser.add_argument(
         "--lut_size", type=int, default=100, help="Number of entries in lookup table."
     )
-    parser.add_argument("--width", type=int, default=1920, help="Width of destination.")
+    parser.add_argument("--width", type=int, default=3840, help="Width of destination.")
     parser.add_argument(
-        "--height", type=int, default=1080, help="Height of destination."
+        "--height", type=int, default=2160, help="Height of destination."
     )
     parser.add_argument(
         "--benchmark_duration",
