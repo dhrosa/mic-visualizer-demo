@@ -5,7 +5,7 @@ from PySide6.QtGui import QImage, QPainter, QTransform
 from PySide6.QtWidgets import QWidget
 
 from gui.cursor import Cursor
-
+from event_timeline import record_first_event
 
 class ImageViewer(QWidget):
     binHovered = Signal(QPoint)
@@ -37,6 +37,7 @@ class ImageViewer(QWidget):
         )
 
     def paintEvent(self, event):
+        record_first_event("ImageViewer.paintEvent")
         painter = QPainter(self)
         with self.image_lock:
             dest_rect = event.rect()
