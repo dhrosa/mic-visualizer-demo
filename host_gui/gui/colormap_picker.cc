@@ -24,7 +24,7 @@ namespace {
   }
 }  // namespace
 
-ColormapPicker::ColormapPicker(std::string_view original_name) {
+ColormapPicker::ColormapPicker() {
   constexpr int width = 256;
   constexpr int height = 24;
   setIconSize(QSize(width, height));
@@ -32,4 +32,15 @@ ColormapPicker::ColormapPicker(std::string_view original_name) {
     addItem(GenerateIcon<width, height>(colormap.entries),
             QString::fromStdString(std::string(colormap.name)));
   }
+  previous_text_ = currentText();
+}
+
+void ColormapPicker::showPopup() {
+  previous_text_ = currentText();
+  QComboBox::showPopup();
+}
+
+void ColormapPicker::hidePopup() {
+  QComboBox::hidePopup();
+  setCurrentText(previous_text_);
 }

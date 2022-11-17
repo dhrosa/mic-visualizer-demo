@@ -6,6 +6,7 @@ add_compile_options(-O2)
 project(host_gui CXX)
 
 find_package(Qt6 REQUIRED COMPONENTS Widgets)
+find_package(absl REQUIRED)
 
 add_custom_command(
   OUTPUT "gui/colormaps.gen.cc"
@@ -25,7 +26,7 @@ add_library(image_viewer STATIC
   gui/image_viewer.h
   gui/image_viewer.cpp
 )
-target_link_libraries(image_viewer PRIVATE Qt6::Widgets colormaps)
+target_link_libraries(image_viewer PRIVATE Qt6::Widgets colormaps absl::cleanup)
 
 add_library(colormap_picker STATIC
   gui/colormap_picker.h
@@ -37,7 +38,8 @@ add_library(main_window STATIC
   gui/main_window.h
   gui/main_window.cpp
 )
-target_link_libraries(main_window PRIVATE Qt6::Widgets image_viewer colormap_picker)
+target_link_libraries(main_window PRIVATE Qt6::Widgets colormaps image_viewer colormap_picker)
+set_property(TARGET main_window PROPERTY AUTOMOC ON)
 
 
 add_executable(main

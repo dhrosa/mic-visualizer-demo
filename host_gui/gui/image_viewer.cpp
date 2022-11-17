@@ -12,14 +12,7 @@
 #include "colormaps.h"
 
 ImageViewer::ImageViewer() : image_(1920, 1080, QImage::Format_ARGB32) {
-  const ColorMap cmap = colormaps()[0];
-
-  for (int r = 0; r < image_.height(); ++r) {
-    auto* scan_line = reinterpret_cast<std::uint32_t*>(image_.scanLine(r));
-    for (int c = 0; c < image_.width(); ++c) {
-      scan_line[c] = cmap.entries[(r + c) % 256];
-    }
-  }
+  image_.fill(0);
 }
 
 QTransform ImageViewer::logicalToWidgetTransform() const {
