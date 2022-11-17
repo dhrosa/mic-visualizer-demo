@@ -1,6 +1,6 @@
 #! /usr/bin/env python3
 
-from matplotlib import colormaps
+from matplotlib.cm import get_cmap
 import numpy as np
 
 # Sequential colormaps from
@@ -48,7 +48,7 @@ _cmap_names = [
 ]
 
 def cmap_lut_entries(cmap_name, n):
-    return colormaps.get_cmap(cmap_name)(np.linspace(0, 1, n, endpoint=True), alpha=1, bytes=True)
+    return get_cmap(cmap_name)(np.linspace(0, 1, n, endpoint=True), alpha=1, bytes=True)
 
 def array_entry_str(color):
     r, g, b, a = color
