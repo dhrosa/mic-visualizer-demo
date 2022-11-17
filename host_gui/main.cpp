@@ -1,9 +1,10 @@
 #include <QApplication>
-#include <QWidget>
+
+#include "gui/main_window.h"
 
 int main(int argc, char** argv) {
   QApplication app(argc, argv);
-  QWidget widget;
-  widget.show();
+  MainWindow window;
+  window.show();
   return app.exec();
 }

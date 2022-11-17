@@ -1,7 +1,8 @@
 *~
 
 *.so
-.rendered*.cpp
+main
+*.a
 **/__pycache__
 
 node_modules/
@@ -13,5 +14,3 @@ CMakeFiles
 Makefile
 *cmake
 CMakeCache.txt
-
-main
