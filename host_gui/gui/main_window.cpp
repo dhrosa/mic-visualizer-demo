@@ -1,23 +1,24 @@
 #include "main_window.h"
-#include "image_viewer.h"
 
 #include <QtCore>
 #include <QtGui>
 #include <QtWidgets>
 
+#include "image_viewer.h"
+
 namespace main_window_internal {
 struct Impl {
-  Impl(MainWindow *window);
+  Impl(MainWindow* window);
 
   void initViewer();
   void initStatusBar();
   void initShortcuts();
 
-  MainWindow *window;
-  ImageViewer *viewer;
+  MainWindow* window;
+  ImageViewer* viewer;
 };
 
-Impl::Impl(MainWindow *window) : window(window) {
+Impl::Impl(MainWindow* window) : window(window) {
   initViewer();
   initStatusBar();
   initShortcuts();
@@ -30,9 +31,9 @@ void Impl::initViewer() {
 }
 
 void Impl::initStatusBar() {
-  QStatusBar *status_bar = window->statusBar();
+  QStatusBar* status_bar = window->statusBar();
 
-  auto *frequency_label = new QLabel();
+  auto* frequency_label = new QLabel();
   QFont font = frequency_label->font();
   font.setFamily("monospace");
   frequency_label->setFont(font);
@@ -46,7 +47,7 @@ void Impl::initShortcuts() {
   new QShortcut(QKeySequence::Quit, window, [&] { window->close(); });
 }
 
-} // namespace main_window_internal
+}  // namespace main_window_internal
 
 MainWindow::MainWindow()
     : impl_(std::make_unique<main_window_internal::Impl>(this)) {}

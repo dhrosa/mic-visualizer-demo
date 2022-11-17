@@ -1,7 +1,5 @@
 #include "./image_viewer.h"
 
-#include <mutex>
-
 #include <QColor>
 #include <QImage>
 #include <QPaintEvent>
@@ -9,6 +7,7 @@
 #include <QRect>
 #include <QRectF>
 #include <QTransform>
+#include <mutex>
 
 ImageViewer::ImageViewer() : image_(1920, 1080, QImage::Format_ARGB32) {
   image_.fill(QColor::fromHslF(0.75, 0.5, 0.5));
@@ -24,7 +23,7 @@ QTransform ImageViewer::widgetToLogicalTransform() const {
                                static_cast<double>(image_.height()) / height());
 }
 
-void ImageViewer::paintEvent(QPaintEvent *event) {
+void ImageViewer::paintEvent(QPaintEvent* event) {
   QPainter painter(this);
   const QRect dest_rect = event->rect();
   auto lock = std::unique_lock(image_mutex_);

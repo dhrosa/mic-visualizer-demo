@@ -49,3 +49,13 @@ add_custom_target(
   COMMAND node node_modules/speedscope/bin/cli.js profile_data
   DEPENDS profile_data
 )
+
+file(GLOB_RECURSE ALL_CXX_SOURCE_FILES
+  ${PROJECT_SOURCE_DIR}/*.[ch]pp
+)
+
+add_custom_target(
+  format_cc
+  COMMAND clang-format -i ${ALL_CXX_SOURCE_FILES}
+  VERBATIM
+)

@@ -1,3 +1,4 @@
+#include <omp.h>
 #include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
@@ -6,8 +7,6 @@
 #include <cstdint>
 #include <cstring>
 #include <stdexcept>
-
-#include <omp.h>
 
 using uint8 = std::uint8_t;
 using uint32 = std::uint32_t;
@@ -37,7 +36,7 @@ Table FromRgbaArray(pybind11::array_t<uint8> arr) {
   const auto view = arr.unchecked<2>();
   Table table;
   table.entries.resize(rows);
-  uint32 *output = table.entries.data();
+  uint32* output = table.entries.data();
   for (pybind11::ssize_t row = 0; row < rows; ++row) {
     const uint8 r = view(row, 0), g = view(row, 1), b = view(row, 2),
                 a = view(row, 3);
@@ -47,9 +46,9 @@ Table FromRgbaArray(pybind11::array_t<uint8> arr) {
   return table;
 }
 
-inline void MapRow(double vmin, double vmax, const uint32 *__restrict lut,
-                   pybind11::ssize_t lut_size, const double *source,
-                   uint32 *__restrict dest, pybind11::ssize_t width) {
+inline void MapRow(double vmin, double vmax, const uint32* __restrict lut,
+                   pybind11::ssize_t lut_size, const double* source,
+                   uint32* __restrict dest, pybind11::ssize_t width) {
   const double vrange = vmax - vmin;
 #pragma clang loop unroll(enable) vectorize_width(32) interleave_count(8)
   for (pybind11::ssize_t col = 0; col < width; ++col) {
@@ -88,7 +87,7 @@ void Table::Map(double vmin, double vmax, pybind11::array_t<double> source,
   }
   const auto source_view = source.unchecked<2>();
   auto dest_view = dest.mutable_unchecked<2>();
-  const uint32 *lut = entries.data();
+  const uint32* lut = entries.data();
   pybind11::gil_scoped_release gil_release;
 #pragma omp parallel for schedule(nonmonotonic : guided)
   for (pybind11::ssize_t row = 0; row < height; ++row) {
