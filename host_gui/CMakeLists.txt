@@ -26,7 +26,7 @@ add_library(image_viewer STATIC
   gui/image_viewer.h
   gui/image_viewer.cpp
 )
-target_link_libraries(image_viewer PRIVATE Qt6::Widgets)
+target_link_libraries(image_viewer PRIVATE Qt6::Widgets colormaps)
 
 add_library(main_window STATIC
   gui/main_window.h

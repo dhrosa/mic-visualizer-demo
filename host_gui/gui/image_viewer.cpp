@@ -1,4 +1,5 @@
 #include "./image_viewer.h"
+#include "colormaps.h"
 
 #include <QColor>
 #include <QImage>
@@ -10,7 +11,14 @@
 #include <mutex>
 
 ImageViewer::ImageViewer() : image_(1920, 1080, QImage::Format_ARGB32) {
-  image_.fill(QColor::fromHslF(0.75, 0.5, 0.5));
+  const ColorMap cmap = colormaps()[0];
+  
+  for (int r = 0; r < image_.height(); ++r) {
+    auto* scan_line = reinterpret_cast<std::uint32_t*>(image_.scanLine(r));
+    for (int c = 0; c < image_.width(); ++c) {
+      scan_line[c] = cmap.entries[(r + c) % 256];
+    }
+  }
 }
 
 QTransform ImageViewer::logicalToWidgetTransform() const {
