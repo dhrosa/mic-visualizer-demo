@@ -3,22 +3,36 @@ set(CMAKE_C_COMPILER "clang")
 set(CMAKE_CXX_COMPILER "clang++")
 set(CMAKE_CXX_STANDARD 20)
 add_compile_options(-O2)
-project(host_gui)
+project(host_gui CXX)
 
 find_package(Qt6 REQUIRED COMPONENTS Widgets)
+
+add_custom_command(
+  OUTPUT "gui/colormaps.gen.cc"
+  WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+  COMMAND ./generate_luts.py > gui/colormaps.gen.cc
+  DEPENDS generate_luts.py
+  VERBATIM
+)
+
+add_library(colormaps STATIC
+  gui/colormaps.h
+  gui/colormaps.cc
+  gui/colormaps.gen.cc
+)
+set_target_properties(colormaps PROPERTIES LINKER_LANGUAGE CXX)
+
 add_library(image_viewer STATIC
   gui/image_viewer.h
   gui/image_viewer.cpp
 )
 target_link_libraries(image_viewer PRIVATE Qt6::Widgets)
-target_include_directories(image_viewer INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
 
 add_library(main_window STATIC
   gui/main_window.h
   gui/main_window.cpp
 )
 target_link_libraries(main_window PRIVATE Qt6::Widgets image_viewer)
-target_include_directories(main_window INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
 
 
 add_executable(main

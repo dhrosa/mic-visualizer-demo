@@ -1,6 +1,7 @@
 *~
 
 *.so
+*.gen.cc
 main
 *.a
 **/__pycache__
