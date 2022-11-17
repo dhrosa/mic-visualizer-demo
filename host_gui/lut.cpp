@@ -107,7 +107,7 @@ void Table::Map(double vmin,
   }
 }
 
-PYBIND11_MODULE(lut_cpp, m) {
+PYBIND11_MODULE(lut, m) {
   pybind11::class_<Table>(m, "Table")
     .def(pybind11::init(&FromRgbaArray))
     .def_readonly("entries", &Table::entries)
