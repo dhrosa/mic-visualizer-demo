@@ -4,6 +4,7 @@
 #include <QtGui>
 #include <QtWidgets>
 
+#include "colormap_picker.h"
 #include "image_viewer.h"
 
 namespace main_window_internal {
@@ -11,6 +12,7 @@ struct Impl {
   Impl(MainWindow* window);
 
   void initViewer();
+  void initToolBar();
   void initStatusBar();
   void initShortcuts();
 
@@ -20,6 +22,7 @@ struct Impl {
 
 Impl::Impl(MainWindow* window) : window(window) {
   initViewer();
+  initToolBar();
   initStatusBar();
   initShortcuts();
 }
@@ -28,6 +31,14 @@ void Impl::initViewer() {
   auto scoped_viewer = std::make_unique<ImageViewer>();
   viewer = scoped_viewer.get();
   window->setCentralWidget(std::move(scoped_viewer).release());
+}
+
+void Impl::initToolBar() {
+  QToolBar& tool_bar = *window->addToolBar("Tool Bar");
+  tool_bar.setFloatable(false);
+
+  auto* colormap_picker = new ColormapPicker("viridis");
+  tool_bar.addWidget(colormap_picker);
 }
 
 void Impl::initStatusBar() {

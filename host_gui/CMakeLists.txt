@@ -20,7 +20,6 @@ add_library(colormaps STATIC
   gui/colormaps.cc
   gui/colormaps.gen.cc
 )
-set_target_properties(colormaps PROPERTIES LINKER_LANGUAGE CXX)
 
 add_library(image_viewer STATIC
   gui/image_viewer.h
@@ -28,11 +27,17 @@ add_library(image_viewer STATIC
 )
 target_link_libraries(image_viewer PRIVATE Qt6::Widgets colormaps)
 
+add_library(colormap_picker STATIC
+  gui/colormap_picker.h
+  gui/colormap_picker.cc
+)
+target_link_libraries(colormap_picker PRIVATE Qt6::Widgets colormaps)
+
 add_library(main_window STATIC
   gui/main_window.h
   gui/main_window.cpp
 )
-target_link_libraries(main_window PRIVATE Qt6::Widgets image_viewer)
+target_link_libraries(main_window PRIVATE Qt6::Widgets image_viewer colormap_picker)
 
 
 add_executable(main
