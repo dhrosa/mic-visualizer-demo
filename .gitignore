@@ -7,7 +7,7 @@
 node_modules/
 package-lock.json
 package.json
-profile.speedscope
+profile_data
 
 CMakeFiles
 Makefile

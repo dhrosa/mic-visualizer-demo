@@ -14,3 +14,15 @@ add_custom_target(tests
   COMMAND python3 -m unittest discover .
   VERBATIM
 )
+
+add_custom_command(
+  OUTPUT profile_data
+  COMMAND py-spy record --native --duration 3 --format speedscope -o profile_data -- ./main.py
+  DEPENDS lut
+)
+
+add_custom_target(
+  profile
+  COMMAND node node_modules/speedscope/bin/cli.js profile_data
+  DEPENDS profile_data
+)
