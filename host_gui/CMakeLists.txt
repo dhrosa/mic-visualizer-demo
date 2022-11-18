@@ -6,7 +6,11 @@ add_compile_options(-O2)
 project(host_gui CXX)
 
 find_package(Qt6 REQUIRED COMPONENTS Widgets)
-find_package(absl REQUIRED)
+
+add_library(generator INTERFACE
+  generator.h
+)
+target_include_directories(generator INTERFACE .)
 
 add_custom_command(
   OUTPUT "gui/colormaps.gen.cc"
@@ -26,7 +30,7 @@ add_library(image_viewer STATIC
   gui/image_viewer.h
   gui/image_viewer.cpp
 )
-target_link_libraries(image_viewer PRIVATE Qt6::Widgets colormaps absl::cleanup)
+target_link_libraries(image_viewer PRIVATE Qt6::Widgets colormaps)
 
 add_library(colormap_picker STATIC
   gui/colormap_picker.h
@@ -38,7 +42,7 @@ add_library(main_window STATIC
   gui/main_window.h
   gui/main_window.cpp
 )
-target_link_libraries(main_window PRIVATE Qt6::Widgets colormaps image_viewer colormap_picker)
+target_link_libraries(main_window PRIVATE Qt6::Widgets generator colormaps image_viewer colormap_picker)
 set_property(TARGET main_window PROPERTY AUTOMOC ON)
 
 
@@ -47,34 +51,9 @@ add_executable(main
 )
 target_link_libraries(main PRIVATE Qt6::Widgets main_window)
 
-find_package(Python 3.10 COMPONENTS Interpreter Development REQUIRED)
-find_package(pybind11 CONFIG REQUIRED)
-
-pybind11_add_module(lut lut.cpp)
-target_compile_options(lut PRIVATE -march=native -O3 -g -fopenmp=libomp)
-target_link_libraries(lut PRIVATE iomp5)
-
-add_custom_target(tests
-  COMMAND python3 -m unittest discover .
-  VERBATIM
-)
-
-add_custom_command(
-  OUTPUT profile_data
-  COMMAND py-spy record --native --duration 3 --format speedscope -o profile_data -- ./main.py
-  DEPENDS lut
-)
-
-add_custom_target(
-  profile
-  COMMAND node node_modules/speedscope/bin/cli.js profile_data
-  DEPENDS profile_data
-)
-
 file(GLOB_RECURSE ALL_CXX_SOURCE_FILES
   ${PROJECT_SOURCE_DIR}/*.[ch]pp
 )
-
 add_custom_target(
   format_cc
   COMMAND clang-format -i ${ALL_CXX_SOURCE_FILES}
