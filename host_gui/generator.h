@@ -32,10 +32,13 @@ template <typename T> struct Promise {
 
   void return_void(){}
 };
+}  // namespace generator_internal
 
 template <typename T>
 class Generator {
 public:
+  using promise_type = generator_internal::Promise<T>;
+  
   Generator(generator_internal::Handle<T> handle) : handle_(handle) {}
   ~Generator() { handle_.destroy(); }
 
@@ -65,4 +68,3 @@ private:
   generator_internal::Handle<T> handle_;
   bool full_ = false;
 };
-}  // namespace generator_internal

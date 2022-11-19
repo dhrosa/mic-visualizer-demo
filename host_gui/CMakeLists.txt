@@ -5,6 +5,16 @@ set(CMAKE_CXX_STANDARD 20)
 add_compile_options(-O2)
 project(host_gui CXX)
 
+include(FetchContent)
+FetchContent_Declare(
+  googletest
+  GIT_REPOSITORY https://github.com/google/googletest.git
+  GIT_TAG release-1.12.1
+)
+FetchContent_MakeAvailable(googletest)
+include(GoogleTest)
+enable_testing()
+
 find_package(Qt6 REQUIRED COMPONENTS Widgets)
 
 add_library(generator INTERFACE
@@ -12,10 +22,13 @@ add_library(generator INTERFACE
 )
 target_include_directories(generator INTERFACE .)
 
+add_executable(generator_test generator_test.cc)
+target_link_libraries(generator_test generator GTest::gtest_main)
+gtest_discover_tests(generator_test)
+
 add_custom_command(
-  OUTPUT "gui/colormaps.gen.cc"
-  WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
-  COMMAND ./generate_luts.py > gui/colormaps.gen.cc
+  OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/colormaps.gen.cc
+  COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/generate_luts.py > ${CMAKE_CURRENT_BINARY_DIR}/colormaps.gen.cc
   DEPENDS generate_luts.py
   VERBATIM
 )
@@ -23,8 +36,10 @@ add_custom_command(
 add_library(colormaps STATIC
   gui/colormaps.h
   gui/colormaps.cc
-  gui/colormaps.gen.cc
+  ${CMAKE_CURRENT_BINARY_DIR}/colormaps.gen.cc
 )
+target_include_directories(colormaps PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/gui)
+
 
 add_library(image_viewer STATIC
   gui/image_viewer.h
