@@ -2,7 +2,6 @@
 
 #include <gtest/gtest.h>
 
-
 TEST(GeneratorTest, Iota) {
   auto iota = []() -> Generator<int> {
     for (int i = 0; true; ++i) {
@@ -11,7 +10,7 @@ TEST(GeneratorTest, Iota) {
   };
 
   auto gen = iota();
-  
+
   EXPECT_EQ(gen(), 0);
   EXPECT_EQ(gen(), 1);
   EXPECT_EQ(gen(), 2);

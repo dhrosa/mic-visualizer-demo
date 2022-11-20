@@ -1,16 +1,15 @@
 #include <QMainWindow>
-
 #include <memory>
 
 namespace main_window_internal {
 struct Impl;
-} // namespace main_window_internal
+}  // namespace main_window_internal
 
 class MainWindow : public QMainWindow {
-public:
+ public:
   MainWindow();
   ~MainWindow();
-  
-private:
+
+ private:
   std::unique_ptr<main_window_internal::Impl> impl_;
 };

@@ -1,10 +1,9 @@
 #pragma once
 
-#include <string_view>
 #include <array>
 #include <cstdint>
 #include <span>
-
+#include <string_view>
 
 struct ColorMap {
   std::string_view name;

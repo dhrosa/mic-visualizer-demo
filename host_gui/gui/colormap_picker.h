@@ -3,10 +3,10 @@
 #include <QComboBox>
 
 class ColormapPicker : public QComboBox {
-public:
+ public:
   ColormapPicker();
 
-private:
+ private:
   void showPopup() override;
   void hidePopup() override;
 

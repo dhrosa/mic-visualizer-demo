@@ -1,11 +1,10 @@
-#include <QWidget>
 #include <QImage>
 #include <QTransform>
-
+#include <QWidget>
 #include <mutex>
 
 class ImageViewer : public QWidget {
-public:
+ public:
   ImageViewer();
 
   QTransform logicalToWidgetTransform() const;
@@ -14,10 +13,10 @@ public:
   template <typename F>
   void UpdateImage(F&& f);
 
-  protected:
+ protected:
   void paintEvent(QPaintEvent* event) override;
-  
-private:
+
+ private:
   std::mutex image_mutex_;
   QImage image_;
 };

@@ -7,8 +7,8 @@
 
 #include "colormap_picker.h"
 #include "colormaps.h"
-#include "image_viewer.h"
 #include "generator.h"
+#include "image_viewer.h"
 
 namespace {
 void MapColors(const ColorMap& cmap, QImage& image) {
