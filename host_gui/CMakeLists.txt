@@ -43,7 +43,7 @@ target_include_directories(colormaps PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/gui)
 
 add_library(image_viewer STATIC
   gui/image_viewer.h
-  gui/image_viewer.cpp
+  gui/image_viewer.cc
 )
 target_link_libraries(image_viewer PRIVATE Qt6::Widgets colormaps)
 
@@ -55,19 +55,20 @@ target_link_libraries(colormap_picker PRIVATE Qt6::Widgets colormaps)
 
 add_library(main_window STATIC
   gui/main_window.h
-  gui/main_window.cpp
+  gui/main_window.cc
 )
 target_link_libraries(main_window PRIVATE Qt6::Widgets generator colormaps image_viewer colormap_picker)
 set_property(TARGET main_window PROPERTY AUTOMOC ON)
 
 
 add_executable(main
-  main.cpp
+  main.cc
 )
 target_link_libraries(main PRIVATE Qt6::Widgets main_window)
 
 file(GLOB_RECURSE ALL_CXX_SOURCE_FILES
-  ${PROJECT_SOURCE_DIR}/*.[ch]pp
+  ${PROJECT_SOURCE_DIR}/*.h
+  ${PROJECT_SOURCE_DIR}/*.cc
 )
 add_custom_target(
   format_cc
