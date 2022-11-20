@@ -1,17 +1,4 @@
 *~
 
-*.so
-*.gen.cc
-main
-*.a
+build
 **/__pycache__
-
-node_modules/
-package-lock.json
-package.json
-profile_data
-
-CMakeFiles
-Makefile
-*cmake
-CMakeCache.txt
