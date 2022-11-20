@@ -38,7 +38,7 @@ add_library(colormaps STATIC
   gui/colormaps.cc
   ${CMAKE_CURRENT_BINARY_DIR}/colormaps.gen.cc
 )
-target_include_directories(colormaps PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/gui)
+target_include_directories(colormaps PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/gui ${CMAKE_CURRENT_BINARY_DIR})
 
 
 add_library(image_viewer STATIC
