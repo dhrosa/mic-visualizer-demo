@@ -9,17 +9,14 @@ include(FetchContent)
 FetchContent_Declare(
   googletest
   GIT_REPOSITORY https://github.com/google/googletest.git
-  GIT_TAG release-1.12.1
-)
+  GIT_TAG release-1.12.1)
 FetchContent_MakeAvailable(googletest)
 include(GoogleTest)
 enable_testing()
 
 find_package(Qt6 REQUIRED COMPONENTS Widgets)
 
-add_library(generator INTERFACE
-  generator.h
-)
+add_library(generator INTERFACE generator.h)
 target_include_directories(generator INTERFACE .)
 
 add_executable(generator_test generator_test.cc)
@@ -28,56 +25,37 @@ gtest_discover_tests(generator_test)
 
 add_custom_command(
   OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/colormaps.gen.cc
-  COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/generate_luts.py > ${CMAKE_CURRENT_BINARY_DIR}/colormaps.gen.cc
+  COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/generate_luts.py >
+          ${CMAKE_CURRENT_BINARY_DIR}/colormaps.gen.cc
   DEPENDS generate_luts.py
-  VERBATIM
-)
+  VERBATIM)
 
-add_library(colormaps STATIC
-  gui/colormaps.h
-  gui/colormaps.cc
-  ${CMAKE_CURRENT_BINARY_DIR}/colormaps.gen.cc
-)
-target_include_directories(colormaps PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/gui ${CMAKE_CURRENT_BINARY_DIR})
+add_library(colormaps STATIC gui/colormaps.h gui/colormaps.cc
+                             ${CMAKE_CURRENT_BINARY_DIR}/colormaps.gen.cc)
+target_include_directories(colormaps PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/gui
+                                             ${CMAKE_CURRENT_BINARY_DIR})
 
-
-add_library(image_viewer STATIC
-  gui/image_viewer.h
-  gui/image_viewer.cc
-)
+add_library(image_viewer STATIC gui/image_viewer.h gui/image_viewer.cc)
 target_link_libraries(image_viewer PRIVATE Qt6::Widgets colormaps)
 
-add_library(colormap_picker STATIC
-  gui/colormap_picker.h
-  gui/colormap_picker.cc
-)
+add_library(colormap_picker STATIC gui/colormap_picker.h gui/colormap_picker.cc)
 target_link_libraries(colormap_picker PRIVATE Qt6::Widgets colormaps)
 
-add_library(main_window STATIC
-  gui/main_window.h
-  gui/main_window.cc
-)
-target_link_libraries(main_window PRIVATE Qt6::Widgets colormaps image_viewer colormap_picker)
+add_library(main_window STATIC gui/main_window.h gui/main_window.cc)
+target_link_libraries(main_window PRIVATE Qt6::Widgets colormaps image_viewer
+                                          colormap_picker)
 set_property(TARGET main_window PROPERTY AUTOMOC ON)
 
-
-add_executable(main
-  main.cc
-)
+add_executable(main main.cc)
 target_link_libraries(main PRIVATE Qt6::Widgets main_window)
 
-file(GLOB_RECURSE ALL_CXX_SOURCE_FILES
-  ${PROJECT_SOURCE_DIR}/*.h
-  ${PROJECT_SOURCE_DIR}/*.cc
-)
+file(GLOB_RECURSE ALL_CXX_SOURCE_FILES ${PROJECT_SOURCE_DIR}/*.h
+     ${PROJECT_SOURCE_DIR}/*.cc)
 add_custom_target(
   format_cc
   COMMAND clang-format -i ${ALL_CXX_SOURCE_FILES}
-  VERBATIM
-)
+  VERBATIM)
 
 add_custom_target(
-  itest
-  COMMAND
-  find ${PROJECT_SOURCE_DIR} -type f | grep -v ${PROJECT_BINARY_DIR} | entr -r sh -c 'make -j && ctest'
-)
+  itest COMMAND find ${PROJECT_SOURCE_DIR} -type f | grep -v
+                ${PROJECT_BINARY_DIR} | entr -r sh -c 'make -j && ctest')
