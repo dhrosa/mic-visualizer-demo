@@ -75,3 +75,9 @@ add_custom_target(
   COMMAND clang-format -i ${ALL_CXX_SOURCE_FILES}
   VERBATIM
 )
+
+add_custom_target(
+  itest
+  COMMAND
+  find ${PROJECT_SOURCE_DIR} -type f | grep -v ${PROJECT_BINARY_DIR} | entr -r sh -c 'make -j && ctest'
+)
