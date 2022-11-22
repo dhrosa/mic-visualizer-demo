@@ -43,59 +43,37 @@ class Generator {
  public:
   using promise_type = generator_internal::Promise<T>;
   using value_type = T;
+  using Handle = generator_internal::Handle<T>;
 
-  Generator(generator_internal::Handle<T> handle) : handle_(handle) {}
-  ~Generator() { handle_.destroy(); }
+  Generator(Handle handle) : iter_{handle} {}
+  ~Generator() { iter_.handle.destroy(); }
 
-  bool Done() const {
-    FillIfNeeded();
-    return !full_ && handle_.done();
-  }
-
-  explicit operator bool() const { return !Done(); }
-
-  T operator()() const {
-    FillIfNeeded();
-    full_ = false;
-    return std::move(handle_.promise().value);
-  }
+  T operator()() { return *++iter_; }
 
   struct Iterator {
-    const Generator<T>* generator;
+    Handle handle;
 
     using value_type = T;
     using difference_type = std::ptrdiff_t;
 
-    T& operator*() const { return generator->handle_.promise().value; }
+    T& operator*() const { return handle.promise().value; }
 
     Iterator& operator++() {
-      generator->handle_.resume();
+      handle.resume();
+      if (handle.promise().exception) {
+        std::rethrow_exception(handle.promise().exception);
+      }
       return *this;
     }
 
     Iterator& operator++(int) { return this->operator++(); }
 
-    bool operator==(Iterator) const { return generator->handle_.done(); }
+    bool operator==(Iterator) const { return handle.done(); }
   };
 
-  Iterator begin() const { return {this}; }
-  Iterator end() const { return begin(); }
+  Iterator begin() const { return ++iter_; }
+  Iterator end() const { return iter_; }
 
  private:
-  void FillIfNeeded() const {
-    if (full_ || handle_.done()) {
-      return;
-    }
-    handle_.resume();
-    if (handle_.promise().exception) {
-      std::rethrow_exception(handle_.promise().exception);
-    }
-    if (handle_.done()) {
-      return;
-    }
-    full_ = true;
-  }
-
-  generator_internal::Handle<T> handle_;
-  mutable bool full_ = false;
+  mutable Iterator iter_;
 };

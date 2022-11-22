@@ -39,7 +39,6 @@ TEST(IteratorTest, Finite) {
   // EXPECT_THAT(std::vector(gen.begin(), gen.end()), testing::ElementsAre(0));
   auto iter = gen.begin();
   EXPECT_FALSE(iter == gen.end());
-  EXPECT_FALSE(gen.Done());
   EXPECT_EQ(0, *iter);
   ++iter;
   EXPECT_TRUE(iter == gen.end());
