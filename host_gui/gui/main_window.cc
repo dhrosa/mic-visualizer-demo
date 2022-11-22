@@ -7,7 +7,6 @@
 
 #include "colormap_picker.h"
 #include "colormaps.h"
-#include "generator.h"
 #include "image_viewer.h"
 
 namespace {

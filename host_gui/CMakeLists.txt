@@ -57,7 +57,7 @@ add_library(main_window STATIC
   gui/main_window.h
   gui/main_window.cc
 )
-target_link_libraries(main_window PRIVATE Qt6::Widgets generator colormaps image_viewer colormap_picker)
+target_link_libraries(main_window PRIVATE Qt6::Widgets colormaps image_viewer colormap_picker)
 set_property(TARGET main_window PROPERTY AUTOMOC ON)
 
 
