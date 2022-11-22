@@ -55,6 +55,11 @@ add_custom_target(
   format_cc
   COMMAND clang-format -i ${ALL_CXX_SOURCE_FILES}
   VERBATIM)
+add_custom_target(
+  format_cmake
+  COMMAND cmake-format -i ${CMAKE_CURRENT_LIST_FILE}
+  VERBATIM)
+add_custom_target(format DEPENDS format_cc format_cmake)
 
 add_custom_target(
   itest COMMAND find ${PROJECT_SOURCE_DIR} -type f | grep -v
