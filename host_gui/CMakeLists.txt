@@ -49,11 +49,10 @@ set_property(TARGET main_window PROPERTY AUTOMOC ON)
 add_executable(main main.cc)
 target_link_libraries(main PRIVATE Qt6::Widgets main_window)
 
-file(GLOB_RECURSE ALL_CXX_SOURCE_FILES ${PROJECT_SOURCE_DIR}/*.h
-     ${PROJECT_SOURCE_DIR}/*.cc)
 add_custom_target(
   format_cc
-  COMMAND clang-format -i ${ALL_CXX_SOURCE_FILES}
+  COMMAND find ${PROJECT_SOURCE_DIR} -type f | grep -v ${PROJECT_BINARY_DIR} |
+          grep -E "(cc|h)$" | xargs -L1 clang-format -i
   VERBATIM)
 add_custom_target(
   format_cmake
