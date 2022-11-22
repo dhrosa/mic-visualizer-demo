@@ -23,7 +23,7 @@ add_library(generator INTERFACE
 target_include_directories(generator INTERFACE .)
 
 add_executable(generator_test generator_test.cc)
-target_link_libraries(generator_test generator GTest::gtest_main)
+target_link_libraries(generator_test generator gmock GTest::gtest_main)
 gtest_discover_tests(generator_test)
 
 add_custom_command(
