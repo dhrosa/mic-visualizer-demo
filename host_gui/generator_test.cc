@@ -1,10 +1,13 @@
 #include "generator.h"
 
+#include <absl/debugging/failure_signal_handler.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
 #include <iterator>
 #include <ranges>
+
+using testing::ElementsAre;
 
 TEST(GeneratorTest, Iota) {
   auto iota = []() -> Generator<int> {
@@ -33,13 +36,26 @@ TEST(GeneratorTest, ExceptionProagated) {
   EXPECT_THROW(gen(), std::runtime_error);
 }
 
+auto ToVector(auto&& gen) { return std::vector(gen.begin(), gen.end()); }
+
 TEST(IteratorTest, Finite) {
   auto gen = []() -> Generator<int> { co_yield 0; }();
 
-  // EXPECT_THAT(std::vector(gen.begin(), gen.end()), testing::ElementsAre(0));
-  auto iter = gen.begin();
-  EXPECT_FALSE(iter == gen.end());
-  EXPECT_EQ(0, *iter);
-  ++iter;
-  EXPECT_TRUE(iter == gen.end());
+  EXPECT_THAT(ToVector(gen), ElementsAre(0));
+}
+
+TEST(IteratorTest, Iota) {
+  auto gen = []() -> Generator<int> {
+    for (int i = 0; true; ++i) {
+      co_yield i;
+    }
+  }();
+
+  auto r = std::move(gen) | std::views::take(1);
+}
+
+int main(int argc, char** argv) {
+  absl::InstallFailureSignalHandler({});
+  testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
 }
