@@ -4,6 +4,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include <algorithm>
 #include <iterator>
 #include <ranges>
 
@@ -36,7 +37,13 @@ TEST(GeneratorTest, ExceptionProagated) {
   EXPECT_THROW(gen(), std::runtime_error);
 }
 
-auto ToVector(auto&& gen) { return std::vector(gen.begin(), gen.end()); }
+template <std::ranges::range R>
+auto ToVector(R&& gen) {
+  using T = std::ranges::range_value_t<R>;
+  std::vector<T> values;
+  std::ranges::copy(gen, std::back_inserter(values));
+  return values;
+}
 
 TEST(IteratorTest, Finite) {
   auto gen = []() -> Generator<int> { co_yield 0; }();
@@ -51,7 +58,7 @@ TEST(IteratorTest, Iota) {
     }
   }();
 
-  auto r = std::move(gen) | std::views::take(1);
+  EXPECT_THAT(ToVector(gen | std::views::take(3)), ElementsAre(0, 1, 2));
 }
 
 int main(int argc, char** argv) {

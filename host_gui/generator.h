@@ -8,6 +8,7 @@
 #include <coroutine>
 #include <exception>
 #include <iterator>
+#include <memory>
 
 template <typename T>
 class Generator;
@@ -41,13 +42,12 @@ struct Promise {
 };
 
 template <typename T>
-auto HandleCleaner(Handle<T> handle) {
-  return absl::MakeCleanup([handle] { handle.destroy(); });
+struct HandleCleanup {
+  Handle<T> handle;
+
+  HandleCleanup(Handle<T> handle) : handle(handle) {}
+  ~HandleCleanup() { handle.destroy(); }
 };
-
-template <typename T>
-using HandleCleanerType = decltype(HandleCleaner(std::declval<Handle<T>>()));
-
 }  // namespace generator_internal
 
 template <typename T>
@@ -57,11 +57,12 @@ class Generator {
   using value_type = T;
   using Handle = generator_internal::Handle<T>;
 
-  Generator(Handle handle)
-      : handle_cleanup_(HandleCleaner(handle)), iter_{handle} {}
+  Generator() = default;
 
-  Generator(Generator&& other) = default;
-  Generator& operator=(Generator&&) = default;
+  Generator(Handle handle)
+      : shared_handle_(
+            std::make_shared<generator_internal::HandleCleanup<T>>(handle)),
+        iter_{handle} {}
 
   T operator()() { return *++iter_; }
 
@@ -98,7 +99,7 @@ class Generator {
   constexpr Iterator end() const { return iter_; }
 
  private:
-  generator_internal::HandleCleanerType<T> handle_cleanup_;
+  std::shared_ptr<generator_internal::HandleCleanup<T>> shared_handle_;
   mutable Iterator iter_;
 };
 
