@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.18)
 set(CMAKE_CXX_STANDARD 20)
 add_compile_options(-O0 -g3 -ftemplate-backtrace-limit=0
                     -fconcepts-diagnostics-depth=10)
-project(host_gui CXX)
+project(host_gui C CXX)
 
 include(FetchContent)
 
@@ -11,13 +11,28 @@ FetchContent_Declare(
   absl
   GIT_REPOSITORY "https://github.com/abseil/abseil-cpp.git"
   GIT_TAG "20220623.1")
-FetchContent_MakeAvailable(absl)
 
 FetchContent_Declare(
   googletest
   GIT_REPOSITORY https://github.com/google/googletest.git
   GIT_TAG release-1.12.1)
-FetchContent_MakeAvailable(googletest)
+
+FetchContent_Declare(
+  xtl
+  GIT_REPOSITORY https://github.com/xtensor-stack/xtl.git
+  GIT_TAG 0.7.4)
+FetchContent_Declare(
+  xsimd
+  GIT_REPOSITORY https://github.com/xtensor-stack/xsimd.git
+  GIT_TAG 9.0.1)
+
+set(XTENSOR_USE_XSIMD 1)
+FetchContent_Declare(
+  xtensor
+  GIT_REPOSITORY https://github.com/xtensor-stack/xtensor.git
+  GIT_TAG 0.24.3)
+
+FetchContent_MakeAvailable(absl googletest xtl xsimd xtensor)
 include(GoogleTest)
 enable_testing()
 
@@ -31,6 +46,8 @@ add_executable(generator_test generator_test.cc)
 target_link_libraries(generator_test generator gmock
                       absl::failure_signal_handler gtest)
 gtest_discover_tests(generator_test)
+
+add_subdirectory(audio)
 
 add_custom_command(
   OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/colormaps.gen.cc
