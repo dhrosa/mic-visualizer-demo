@@ -31,10 +31,10 @@ add_library(audio_source
   source.h
 )
 
-target_link_libraries(audio_source cardinal xtensor generator)
+target_link_libraries(audio_source cardinal xtensor generator absl::time)
 
 add_executable(audio_source_test
   source_test.cc
 )
-target_link_libraries(audio_source_test audio_source gmock gtest GTest::gtest_main)
+target_link_libraries(audio_source_test audio_source gmock gtest GTest::gtest_main absl::failure_signal_handler)
 gtest_discover_tests(audio_source_test)

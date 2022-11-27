@@ -1,13 +1,13 @@
 #pragma once
 
+#include <absl/time/time.h>
+
 #include <cstdint>
 #include <span>
-#include <xtensor/xtensor.hpp>
+#include <vector>
 
 #include "generator.h"
 
-using AudioFrame = xt::xtensor<std::int16_t, 1>;
-
-Generator<AudioFrame> SimulatedSource();
-
 std::span<const std::int16_t> SimulatedSamples();
+
+Generator<std::vector<std::int16_t>> SimulatedSource(absl::Duration period);
