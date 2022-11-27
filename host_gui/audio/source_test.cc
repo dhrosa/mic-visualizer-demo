@@ -7,7 +7,9 @@
 #include <ranges>
 #include <xtensor/xadapt.hpp>
 
+using testing::AllOf;
 using testing::ElementsAreArray;
+using testing::SizeIs;
 
 // gMock doesn't pretty pring std::span properly for some reason
 auto ToVector(auto s) { return std::vector(s.begin(), s.end()); }
@@ -35,6 +37,21 @@ TEST(SimulatedSourceTest, SourceFirstSamplesMatch) {
   EXPECT_THAT(source(), ElementsAreArray(samples.subspan(24, 48)));
   EXPECT_THAT(source(), ElementsAreArray(samples.subspan(48, 72)));
   EXPECT_THAT(source(), ElementsAreArray(samples.subspan(72, 96)));
+}
+
+TEST(SimulatedSourceTest, SourceLastSamplesMatch) {
+  const std::span<const std::int16_t> samples = SimulatedSamples();
+
+  auto source = SimulatedSource(absl::Seconds(4));
+
+  EXPECT_THAT(source(), SizeIs(96'000));
+
+  auto last = source();
+  EXPECT_THAT(last, SizeIs(96'000));
+  EXPECT_THAT(std::span<const std::int16_t>(last).first(5952),
+              ElementsAreArray(samples.last(5952)));
+  EXPECT_THAT(std::span<const std::int16_t>(last).last(90048),
+              ElementsAreArray(samples.first(90048)));
 }
 
 int main(int argc, char** argv) {

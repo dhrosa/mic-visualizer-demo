@@ -6,7 +6,7 @@
 // Symbols to access binary data embedded via linker.
 extern const std::int16_t _binary_cardinal_pcm_start[];
 extern const std::int16_t _binary_cardinal_pcm_end[];
-constexpr int kSampleRate = 24'000;
+constexpr std::int64_t kSampleRate = 24'000;
 
 std::span<const std::int16_t> SimulatedSamples() {
   return std::span<const std::int16_t>(_binary_cardinal_pcm_start,
@@ -20,8 +20,7 @@ std::vector<std::int16_t> PeriodicSubspan(std::span<const std::int16_t> s,
                                           std::size_t count) {
   start %= s.size();
   const std::size_t end = std::min(start + count, s.size());
-  ;
-  const std::span first = s.subspan(start, end);
+  const std::span first = s.subspan(start, end - start);
 
   const std::size_t remaining = count - first.size();
   const std::span second = s.subspan(0, remaining);
