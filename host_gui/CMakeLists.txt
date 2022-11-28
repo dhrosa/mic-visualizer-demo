@@ -22,7 +22,6 @@ FetchContent_Declare(
   GIT_REPOSITORY https://github.com/google/googletest.git
   GIT_TAG release-1.12.1)
 
-
 FetchContent_MakeAvailable(absl googletest)
 include(GoogleTest)
 enable_testing()
@@ -39,29 +38,7 @@ target_link_libraries(generator_test generator gmock
 gtest_discover_tests(generator_test)
 
 add_subdirectory(audio)
-
-add_custom_command(
-  OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/colormaps.gen.cc
-  COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/generate_luts.py >
-          ${CMAKE_CURRENT_BINARY_DIR}/colormaps.gen.cc
-  DEPENDS generate_luts.py
-  VERBATIM)
-
-add_library(colormaps STATIC gui/colormaps.h gui/colormaps.cc
-                             ${CMAKE_CURRENT_BINARY_DIR}/colormaps.gen.cc)
-target_include_directories(colormaps PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/gui
-                                             ${CMAKE_CURRENT_BINARY_DIR})
-
-add_library(image_viewer STATIC gui/image_viewer.h gui/image_viewer.cc)
-target_link_libraries(image_viewer PRIVATE Qt6::Widgets colormaps)
-
-add_library(colormap_picker STATIC gui/colormap_picker.h gui/colormap_picker.cc)
-target_link_libraries(colormap_picker PRIVATE Qt6::Widgets colormaps)
-
-add_library(main_window STATIC gui/main_window.h gui/main_window.cc)
-target_link_libraries(main_window PRIVATE Qt6::Widgets colormaps image_viewer
-                                          colormap_picker)
-set_property(TARGET main_window PROPERTY AUTOMOC ON)
+add_subdirectory(gui)
 
 add_executable(main main.cc)
 target_link_libraries(main PRIVATE Qt6::Widgets main_window)
