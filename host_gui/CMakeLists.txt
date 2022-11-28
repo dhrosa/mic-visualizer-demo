@@ -82,7 +82,8 @@ add_custom_target(
   VERBATIM)
 add_custom_target(
   format_cmake
-  COMMAND cmake-format -i ${CMAKE_CURRENT_LIST_FILE}
+  COMMAND find ${PROJECT_SOURCE_DIR} -name CMakeLists.txt | grep -v
+          ${PROJECT_BINARY_DIR} | xargs -L1 cmake-format -i
   VERBATIM)
 add_custom_target(format DEPENDS format_cc format_cmake)
 
