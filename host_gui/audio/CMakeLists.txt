@@ -2,15 +2,13 @@ cmake_minimum_required(VERSION 3.18)
 project(audio CXX)
 
 add_custom_command(
-  OUTPUT cardinal.pcm
-  COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/cardinal.pcm
-          ${CMAKE_CURRENT_BINARY_DIR})
-
-add_custom_command(
   OUTPUT cardinal.o
+  BYPRODUCTS cardinal.pcm
+  DEPENDS cardinal.pcm
+  COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/cardinal.pcm
+          ${CMAKE_CURRENT_BINARY_DIR}
   COMMAND ld --relocatable --format=binary -z noexecstack --output=cardinal.o
-          cardinal.pcm
-  DEPENDS cardinal.pcm)
+          cardinal.pcm)
 
 add_library(cardinal STATIC cardinal.o)
 
