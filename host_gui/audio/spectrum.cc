@@ -13,12 +13,12 @@ std::vector<std::complex<double>> Spectrum(
   std::transform(samples.begin(), samples.end(), complex_samples.begin(),
                  [](auto x) { return static_cast<double>(x); });
 
-  std::vector<std::complex<double>> spectrum;
+  std::vector<std::complex<double>> spectrum(n);
   fftw_plan plan = fftw_plan_dft_1d(
       n, reinterpret_cast<fftw_complex*>(complex_samples.data()),
       reinterpret_cast<fftw_complex*>(spectrum.data()), FFTW_FORWARD,
       FFTW_ESTIMATE);
-  auto plan_cleanup = [&]() { fftw_destroy_plan(plan); };
+  auto plan_cleanup = absl::MakeCleanup([&]() { fftw_destroy_plan(plan); });
 
   fftw_execute(plan);
   return spectrum;
