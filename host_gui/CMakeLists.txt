@@ -22,22 +22,8 @@ FetchContent_Declare(
   GIT_REPOSITORY https://github.com/google/googletest.git
   GIT_TAG release-1.12.1)
 
-FetchContent_Declare(
-  xtl
-  GIT_REPOSITORY https://github.com/xtensor-stack/xtl.git
-  GIT_TAG 0.7.4)
-FetchContent_Declare(
-  xsimd
-  GIT_REPOSITORY https://github.com/xtensor-stack/xsimd.git
-  GIT_TAG 9.0.1)
 
-set(XTENSOR_USE_XSIMD 1)
-FetchContent_Declare(
-  xtensor
-  GIT_REPOSITORY https://github.com/xtensor-stack/xtensor.git
-  GIT_TAG 0.24.3)
-
-FetchContent_MakeAvailable(absl googletest xtl xsimd xtensor)
+FetchContent_MakeAvailable(absl googletest)
 include(GoogleTest)
 enable_testing()
 
