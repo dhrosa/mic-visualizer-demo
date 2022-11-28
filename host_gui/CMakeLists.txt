@@ -1,7 +1,12 @@
 cmake_minimum_required(VERSION 3.18)
 set(CMAKE_CXX_STANDARD 20)
-add_compile_options(-O0 -g3 -ftemplate-backtrace-limit=0
-                    -fconcepts-diagnostics-depth=10)
+
+# Flags shared between C and C++ targets
+add_compile_options(-O0 -g3)
+# Flags only for C++ targets
+set(cxx_flags -ftemplate-backtrace-limit=0 -fconcepts-diagnostics-depth=10)
+add_compile_options("$<$<COMPILE_LANGUAGE:CXX>:${cxx_flags}>")
+
 project(host_gui C CXX)
 
 include(FetchContent)
