@@ -6,16 +6,12 @@
 
 #include <ranges>
 
-using testing::AllOf;
 using testing::ElementsAreArray;
 using testing::SizeIs;
 
-// gMock doesn't pretty pring std::span properly for some reason
-auto ToVector(auto s) { return std::vector(s.begin(), s.end()); }
-
 TEST(SimulatedSourceTest, Basic) {
   const std::span<const std::int16_t> samples = SimulatedSamples();
-  EXPECT_THAT(samples, testing::SizeIs(101952));
+  EXPECT_THAT(samples, SizeIs(101952));
 
   auto nonzero = [](auto x) { return x != 0; };
 
@@ -33,9 +29,9 @@ TEST(SimulatedSourceTest, SourceFirstSamplesMatch) {
   // 1ms @ 24kHz = 24 samples.
   auto source = SimulatedSource(absl::Milliseconds(1));
   EXPECT_THAT(source(), ElementsAreArray(samples.subspan(0, 24)));
-  EXPECT_THAT(source(), ElementsAreArray(samples.subspan(24, 48)));
-  EXPECT_THAT(source(), ElementsAreArray(samples.subspan(48, 72)));
-  EXPECT_THAT(source(), ElementsAreArray(samples.subspan(72, 96)));
+  EXPECT_THAT(source(), ElementsAreArray(samples.subspan(24, 24)));
+  EXPECT_THAT(source(), ElementsAreArray(samples.subspan(48, 24)));
+  EXPECT_THAT(source(), ElementsAreArray(samples.subspan(72, 24)));
 }
 
 TEST(SimulatedSourceTest, SourceLastSamplesMatch) {
