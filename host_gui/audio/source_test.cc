@@ -5,7 +5,6 @@
 #include <gtest/gtest.h>
 
 #include <ranges>
-#include <xtensor/xadapt.hpp>
 
 using testing::AllOf;
 using testing::ElementsAreArray;
