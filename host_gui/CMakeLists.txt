@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 3.18)
 set(CMAKE_CXX_STANDARD 20)
 
+# Adding FFTW as a dependency causes absl to fail to link without this.
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
 # Flags shared between C and C++ targets
 add_compile_options(-O0 -g3)
 # Flags only for C++ targets
@@ -22,7 +25,9 @@ FetchContent_Declare(
   GIT_REPOSITORY https://github.com/google/googletest.git
   GIT_TAG release-1.12.1)
 
-FetchContent_MakeAvailable(absl googletest)
+FetchContent_Declare(fftw3 URL "https://www.fftw.org/fftw-3.3.10.tar.gz")
+
+FetchContent_MakeAvailable(absl googletest fftw3)
 include(GoogleTest)
 enable_testing()
 

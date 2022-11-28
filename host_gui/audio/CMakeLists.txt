@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.18)
-project(audio CXX)
+project(audio C CXX)
 
 add_custom_command(
   OUTPUT cardinal.o
@@ -17,10 +17,19 @@ set_source_files_properties(cardinal.o PROPERTIES EXTERNAL_OBJECT true GENERATED
 set_target_properties(cardinal PROPERTIES LINKER_LANGUAGE C)
 
 add_library(audio_source source.cc source.h)
-
 target_link_libraries(audio_source cardinal generator absl::time)
 
 add_executable(audio_source_test source_test.cc)
 target_link_libraries(audio_source_test audio_source gmock gtest
-                      GTest::gtest_main absl::failure_signal_handler)
+                      absl::failure_signal_handler)
 gtest_discover_tests(audio_source_test)
+
+add_library(audio_spectrum spectrum.h spectrum.cc)
+# For some reason the fftw3 library itself doesn't automatically add the right
+# include directories?
+target_include_directories(audio_spectrum PRIVATE ${fftw3_SOURCE_DIR}/api)
+target_link_libraries(audio_spectrum fftw3)
+add_executable(audio_spectrum_test spectrum_test.cc)
+target_link_libraries(audio_spectrum_test audio_spectrum gmock gtest
+                      absl::failure_signal_handler)
+gtest_discover_tests(audio_spectrum_test)
