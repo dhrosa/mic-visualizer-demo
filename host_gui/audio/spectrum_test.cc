@@ -1,6 +1,5 @@
 #include "spectrum.h"
 
-#include <absl/debugging/failure_signal_handler.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
@@ -33,10 +32,4 @@ TEST(SpectrumTest, DcAndNyquist) {
 TEST(SpectrumTest, Sine) {
   const std::int16_t samples[] = {0, 1, 0, -1};
   EXPECT_THAT(Spectrum(samples), ElementsAre(0, -2i, 0, 2i));
-}
-
-int main(int argc, char** argv) {
-  absl::InstallFailureSignalHandler({});
-  testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
 }

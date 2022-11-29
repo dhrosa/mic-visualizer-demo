@@ -1,6 +1,5 @@
 #include "source.h"
 
-#include <absl/debugging/failure_signal_handler.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
@@ -47,10 +46,4 @@ TEST(SimulatedSourceTest, SourceLastSamplesMatch) {
               ElementsAreArray(samples.last(5952)));
   EXPECT_THAT(std::span<const std::int16_t>(last).last(90048),
               ElementsAreArray(samples.first(90048)));
-}
-
-int main(int argc, char** argv) {
-  absl::InstallFailureSignalHandler({});
-  testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
 }

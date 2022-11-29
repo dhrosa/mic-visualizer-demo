@@ -18,18 +18,15 @@ set_target_properties(cardinal PROPERTIES LINKER_LANGUAGE C)
 
 add_library(audio_source source.cc source.h)
 target_link_libraries(audio_source cardinal generator absl::time)
-
 add_executable(audio_source_test source_test.cc)
-target_link_libraries(audio_source_test audio_source gmock gtest
-                      absl::failure_signal_handler)
+target_link_libraries(audio_source_test audio_source gmock gtest test_main)
 gtest_discover_tests(audio_source_test)
 
 add_library(audio_spectrum spectrum.h spectrum.cc)
 # For some reason the fftw3 library itself doesn't automatically add the right
 # include directories?
 target_include_directories(audio_spectrum PRIVATE ${fftw3_SOURCE_DIR}/api)
-target_link_libraries(audio_spectrum fftw3)
+target_link_libraries(audio_spectrum fftw3 absl::cleanup)
 add_executable(audio_spectrum_test spectrum_test.cc)
-target_link_libraries(audio_spectrum_test audio_spectrum gmock gtest
-                      absl::failure_signal_handler)
+target_link_libraries(audio_spectrum_test audio_spectrum gmock gtest test_main)
 gtest_discover_tests(audio_spectrum_test)

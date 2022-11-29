@@ -42,6 +42,7 @@ target_link_libraries(generator_test generator gmock
                       absl::failure_signal_handler gtest)
 gtest_discover_tests(generator_test)
 
+add_subdirectory(diy)
 add_subdirectory(audio)
 add_subdirectory(gui)
 
