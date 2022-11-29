@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <ranges>
+#include <memory>
 
 // Symbols to access binary data embedded via linker.
 extern const std::int16_t _binary_cardinal_pcm_start[];
@@ -15,7 +16,7 @@ std::span<const std::int16_t> SimulatedSamples() {
 
 namespace {
 
-std::vector<std::int16_t> PeriodicSubspan(std::span<const std::int16_t> s,
+Buffer<std::int16_t> PeriodicSubspan(std::span<const std::int16_t> s,
                                           std::size_t start,
                                           std::size_t count) {
   start %= s.size();
@@ -25,15 +26,16 @@ std::vector<std::int16_t> PeriodicSubspan(std::span<const std::int16_t> s,
   const std::size_t remaining = count - first.size();
   const std::span second = s.subspan(0, remaining);
 
-  std::vector<std::int16_t> out;
-  out.reserve(count);
-  std::ranges::copy(first, std::back_insert_iterator(out));
-  std::ranges::copy(second, std::back_insert_iterator(out));
-  return out;
+  auto storage = std::make_unique_for_overwrite<std::int16_t[]>(count);
+  std::span<std::int16_t> data(storage.get(), count);
+  
+  std::ranges::copy(first, data.begin());
+  std::ranges::copy(second, data.begin() + first.size());
+  return Buffer<std::int16_t>(data, [storage=std::move(storage)]{});
 }
 }  // namespace
 
-Generator<std::vector<std::int16_t>> SimulatedSource(absl::Duration period) {
+Generator<Buffer<std::int16_t>> SimulatedSource(absl::Duration period) {
   const auto samples = SimulatedSamples();
   const std::size_t frame_size = absl::ToInt64Seconds(kSampleRate * period);
   if (frame_size > samples.size()) {

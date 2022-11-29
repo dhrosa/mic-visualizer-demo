@@ -7,7 +7,8 @@
 #include <vector>
 
 #include "generator.h"
+#include "buffer.h"
 
 std::span<const std::int16_t> SimulatedSamples();
 
-Generator<std::vector<std::int16_t>> SimulatedSource(absl::Duration period);
+Generator<Buffer<std::int16_t>> SimulatedSource(absl::Duration period);

@@ -28,7 +28,7 @@ class Generator {
         iter_{handle} {}
 
   // Produces the next value of the sequence.
-  T operator()() { return *++iter_; }
+  T& operator()() { return *++iter_; }
 
   // Allows for iteration over the stream of values. Equality
   // comparison between iterators is only meaningful against end().

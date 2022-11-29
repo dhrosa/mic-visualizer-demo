@@ -40,10 +40,10 @@ TEST(SimulatedSourceTest, SourceLastSamplesMatch) {
 
   EXPECT_THAT(source(), SizeIs(96'000));
 
-  auto last = source();
+  auto& last = source();
   EXPECT_THAT(last, SizeIs(96'000));
-  EXPECT_THAT(std::span<const std::int16_t>(last).first(5952),
+  EXPECT_THAT(last.span().first(5952),
               ElementsAreArray(samples.last(5952)));
-  EXPECT_THAT(std::span<const std::int16_t>(last).last(90048),
+  EXPECT_THAT(last.span().last(90048),
               ElementsAreArray(samples.first(90048)));
 }
