@@ -26,11 +26,19 @@ std::vector<std::complex<double>> Spectrum(
   fftw_execute(plan);
   return spectrum;
 }
+
+void CheckEven(std::size_t n) {
+  if (n % 2 != 0) {
+    throw std::invalid_argument("FFT length must be even. Got: " +
+                                std::to_string(n));
+  }
+}
 }  // namespace
 
 std::vector<double> PowerSpectrum(std::span<const std::int16_t> samples) {
-  const std::vector<std::complex<double>> spectrum = Spectrum(samples);
   const std::size_t n = samples.size();
+  CheckEven(n);
+  const std::vector<std::complex<double>> spectrum = Spectrum(samples);
   const std::size_t norm = n * n;
   // DC bin and nyquist bins are the only bins that don't have a conjugate pair
   const std::size_t conjugate_bin_count = (n - 2) / 2;
@@ -50,4 +58,13 @@ std::vector<double> PowerSpectrum(std::span<const std::int16_t> samples) {
   std::ranges::transform(positive_ac, ++power_spectrum.begin(), power);
 
   return power_spectrum;
+}
+
+std::vector<double> FrequencyBins(std::size_t n, double fs) {
+  CheckEven(n);
+  std::vector<double> bins(n / 2 + 1);
+  for (std::size_t i = 0; i < n / 2 + 1; ++i) {
+    bins[i] = fs * i / n;
+  }
+  return bins;
 }

@@ -6,6 +6,11 @@
 using testing::ElementsAre;
 using testing::SizeIs;
 
+TEST(SpectrumTest, OddSizeThrowsError) {
+  const std::int16_t samples[] = {0, 0, 0};
+  EXPECT_THROW(PowerSpectrum(samples), std::invalid_argument);
+}
+
 TEST(SpectrumTest, Zero) {
   const std::int16_t samples[] = {0, 0, 0, 0};
   EXPECT_THAT(PowerSpectrum(samples), ElementsAre(0, 0, 0));
@@ -34,4 +39,12 @@ TEST(SpectrumTest, Cosine) {
 TEST(SpectrumTest, Sine) {
   const std::int16_t samples[] = {0, 1, 0, -1};
   EXPECT_THAT(PowerSpectrum(samples), ElementsAre(0, 1, 0));
+}
+
+TEST(BinsTest, EvenSize) {
+  EXPECT_THAT(FrequencyBins(10, 1000), ElementsAre(0, 100, 200, 300, 400, 500));
+}
+
+TEST(BinsTest, OddSizeThrowsError) {
+  EXPECT_THROW(FrequencyBins(9, 1000), std::invalid_argument);
 }
