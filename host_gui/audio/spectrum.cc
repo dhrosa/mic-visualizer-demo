@@ -60,7 +60,7 @@ std::vector<double> PowerSpectrum(std::span<const std::int16_t> samples) {
 std::vector<double> FrequencyBins(std::size_t n, double fs) {
   CheckEven(n);
   std::vector<double> bins(n / 2 + 1);
-  for (std::size_t i = 0; i < n / 2 + 1; ++i) {
+  for (std::size_t i = 0; i < bins.size(); ++i) {
     bins[i] = fs * i / n;
   }
   return bins;
