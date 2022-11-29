@@ -5,17 +5,25 @@
 
 #include <algorithm>
 #include <complex>
+#include <memory>
 #include <ranges>
 
 namespace {
-std::vector<std::complex<double>> Spectrum(
-    std::span<const std::int16_t> samples) {
-  const std::size_t n = samples.size();
-  std::vector<std::complex<double>> complex_samples(n);
-  std::transform(samples.begin(), samples.end(), complex_samples.begin(),
-                 [](auto x) { return static_cast<double>(x); });
 
-  std::vector<std::complex<double>> spectrum(n);
+Buffer<std::complex<double>> FftwBuffer(std::size_t n) {
+  auto* raw = reinterpret_cast<std::complex<double>*>(fftw_alloc_complex(n));
+  return Buffer<std::complex<double>>({raw, n}, [raw] { fftw_free(raw); });
+}
+
+Buffer<std::complex<double>> Spectrum(std::span<const std::int16_t> samples) {
+  const std::size_t n = samples.size();
+  // TODO(dhrosa): This can be an in-place FFT, as this buffer is only used
+  // within this function.
+  Buffer<std::complex<double>> complex_samples = FftwBuffer(n);
+  std::ranges::transform(samples, complex_samples.begin(),
+                         [](auto x) { return static_cast<double>(x); });
+
+  Buffer<std::complex<double>> spectrum = FftwBuffer(n);
   fftw_plan plan = fftw_plan_dft_1d(
       n, reinterpret_cast<fftw_complex*>(complex_samples.data()),
       reinterpret_cast<fftw_complex*>(spectrum.data()), FFTW_FORWARD,
@@ -37,9 +45,9 @@ void CheckEven(std::size_t n) {
 Buffer<double> PowerSpectrum(std::span<const std::int16_t> samples) {
   const std::size_t n = samples.size();
   CheckEven(n);
-  const std::vector<std::complex<double>> spectrum = Spectrum(samples);
+  const Buffer<std::complex<double>> spectrum = Spectrum(samples);
   const std::size_t norm = n * n;
-  // DC bin and nyquist bins are the only bins that don't have a conjugate pair
+  // DC bin and nyquist bins are the only bins that don't have a conjugate pair.
   const std::size_t conjugate_bin_count = (n - 2) / 2;
   const std::size_t nyquist_index = n / 2;
 
@@ -54,9 +62,7 @@ Buffer<double> PowerSpectrum(std::span<const std::int16_t> samples) {
       std::span<double>(storage.get(), 2 + conjugate_bin_count);
   power_spectrum.front() = power(spectrum[0]);
   power_spectrum.back() = power(spectrum[nyquist_index]);
-
   std::ranges::transform(positive_ac, ++power_spectrum.begin(), power);
-
   return Buffer<double>(power_spectrum, [storage = std::move(storage)] {});
 }
 
