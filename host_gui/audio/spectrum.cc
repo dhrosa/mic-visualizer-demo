@@ -4,8 +4,11 @@
 #include <fftw3.h>
 
 #include <algorithm>
+#include <complex>
+#include <iostream>
 #include <ranges>
 
+namespace {
 std::vector<std::complex<double>> Spectrum(
     std::span<const std::int16_t> samples) {
   const std::size_t n = samples.size();
@@ -23,23 +26,28 @@ std::vector<std::complex<double>> Spectrum(
   fftw_execute(plan);
   return spectrum;
 }
+}  // namespace
 
 std::vector<double> PowerSpectrum(std::span<const std::int16_t> samples) {
   const std::vector<std::complex<double>> spectrum = Spectrum(samples);
   const std::size_t n = samples.size();
+  const std::size_t norm = n * n;
   // DC bin and nyquist bins are the only bins that don't have a conjugate pair
   const std::size_t conjugate_bin_count = (n - 2) / 2;
-  const std::size_t nyquist_index = 1 + conjugate_bin_count;
+  const std::size_t nyquist_index = n / 2;
+
+  std::cout << nyquist_index << std::endl;
 
   auto positive_ac =
       spectrum | std::views::drop(1) | std::views::take(conjugate_bin_count);
 
-  std::vector<double> power_spectrum(2 + conjugate_bin_count);
-  power_spectrum[0] = spectrum[0].real();
-  power_spectrum[nyquist_index] = spectrum[nyquist_index].real();
+  auto power = [&](auto x) { return 4 * std::norm(x) / norm; };
 
-  std::ranges::transform(positive_ac, ++power_spectrum.begin(),
-                         [](auto x) { return x.real() * x.real(); });
+  std::vector<double> power_spectrum(2 + conjugate_bin_count);
+  power_spectrum.front() = power(spectrum[0]);
+  power_spectrum.back() = power(spectrum[nyquist_index]);
+
+  std::ranges::transform(positive_ac, ++power_spectrum.begin(), power);
 
   return power_spectrum;
 }

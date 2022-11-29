@@ -6,7 +6,7 @@ target_link_libraries(test_main gtest absl::failure_signal_handler)
 function(diy_add_test target_name)
   add_executable("${target_name}" "${ARGN}")
   target_link_libraries("${target_name}" gmock gtest test_main)
-  gtest_discover_tests("${target_name}")
+  gtest_discover_tests("${target_name}" DISCOVERY_MODE PRE_TEST)
 endfunction()
 
 add_library(generator INTERFACE generator.h)

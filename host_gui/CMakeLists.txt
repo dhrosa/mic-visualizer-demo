@@ -55,4 +55,4 @@ add_custom_target(format DEPENDS format_cc format_cmake)
 add_custom_target(
   itest
   COMMAND find ${PROJECT_SOURCE_DIR} -type f | grep -v ${PROJECT_BINARY_DIR} |
-          entr -r sh -c 'make -j && ctest --rerun-failed --output-on-failure')
+          entr -r sh -c 'make -j && ctest --output-on-failure')
