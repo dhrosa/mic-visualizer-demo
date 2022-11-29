@@ -15,4 +15,8 @@ target_link_libraries(generator INTERFACE absl::cleanup)
 
 diy_add_test(generator_test generator_test.cc)
 target_link_libraries(generator_test generator)
-gtest_discover_tests(generator_test)
+
+add_library(buffer INTERFACE buffer.h)
+target_link_libraries(buffer INTERFACE absl::any_invocable)
+diy_add_test(buffer_test buffer_test.cc)
+target_link_libraries(buffer_test buffer)
