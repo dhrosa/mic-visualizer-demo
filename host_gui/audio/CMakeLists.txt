@@ -26,7 +26,7 @@ add_library(audio_spectrum spectrum.h spectrum.cc)
 # For some reason the fftw3 library itself doesn't automatically add the right
 # include directories?
 target_include_directories(audio_spectrum PRIVATE ${fftw3_SOURCE_DIR}/api)
-target_link_libraries(audio_spectrum fftw3 absl::cleanup generator)
+target_link_libraries(audio_spectrum fftw3 absl::cleanup generator buffer)
 
 diy_add_test(audio_spectrum_test spectrum_test.cc)
 target_link_libraries(audio_spectrum_test audio_spectrum)

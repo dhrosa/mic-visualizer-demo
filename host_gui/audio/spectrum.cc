@@ -34,7 +34,7 @@ void CheckEven(std::size_t n) {
 }
 }  // namespace
 
-std::vector<double> PowerSpectrum(std::span<const std::int16_t> samples) {
+Buffer<double> PowerSpectrum(std::span<const std::int16_t> samples) {
   const std::size_t n = samples.size();
   CheckEven(n);
   const std::vector<std::complex<double>> spectrum = Spectrum(samples);
@@ -48,13 +48,16 @@ std::vector<double> PowerSpectrum(std::span<const std::int16_t> samples) {
 
   auto power = [&](auto x) { return 4 * std::norm(x) / norm; };
 
-  std::vector<double> power_spectrum(2 + conjugate_bin_count);
+  auto storage =
+      std::make_unique_for_overwrite<double[]>(2 + conjugate_bin_count);
+  auto power_spectrum =
+      std::span<double>(storage.get(), 2 + conjugate_bin_count);
   power_spectrum.front() = power(spectrum[0]);
   power_spectrum.back() = power(spectrum[nyquist_index]);
 
   std::ranges::transform(positive_ac, ++power_spectrum.begin(), power);
 
-  return power_spectrum;
+  return Buffer<double>(power_spectrum, [storage = std::move(storage)] {});
 }
 
 std::vector<double> FrequencyBins(std::size_t n, double fs) {

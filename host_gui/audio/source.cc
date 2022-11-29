@@ -1,8 +1,8 @@
 #include "source.h"
 
 #include <algorithm>
-#include <ranges>
 #include <memory>
+#include <ranges>
 
 // Symbols to access binary data embedded via linker.
 extern const std::int16_t _binary_cardinal_pcm_start[];
@@ -17,8 +17,7 @@ std::span<const std::int16_t> SimulatedSamples() {
 namespace {
 
 Buffer<std::int16_t> PeriodicSubspan(std::span<const std::int16_t> s,
-                                          std::size_t start,
-                                          std::size_t count) {
+                                     std::size_t start, std::size_t count) {
   start %= s.size();
   const std::size_t end = std::min(start + count, s.size());
   const std::span first = s.subspan(start, end - start);
@@ -28,10 +27,10 @@ Buffer<std::int16_t> PeriodicSubspan(std::span<const std::int16_t> s,
 
   auto storage = std::make_unique_for_overwrite<std::int16_t[]>(count);
   std::span<std::int16_t> data(storage.get(), count);
-  
+
   std::ranges::copy(first, data.begin());
   std::ranges::copy(second, data.begin() + first.size());
-  return Buffer<std::int16_t>(data, [storage=std::move(storage)]{});
+  return Buffer<std::int16_t>(data, [storage = std::move(storage)] {});
 }
 }  // namespace
 

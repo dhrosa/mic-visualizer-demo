@@ -5,8 +5,9 @@
 #include <span>
 #include <vector>
 
+#include "buffer.h"
 #include "generator.h"
 
-std::vector<double> PowerSpectrum(std::span<const std::int16_t> samples);
+Buffer<double> PowerSpectrum(std::span<const std::int16_t> samples);
 
 std::vector<double> FrequencyBins(std::size_t n, double fs);

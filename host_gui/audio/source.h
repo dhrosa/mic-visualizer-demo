@@ -6,8 +6,8 @@
 #include <span>
 #include <vector>
 
-#include "generator.h"
 #include "buffer.h"
+#include "generator.h"
 
 std::span<const std::int16_t> SimulatedSamples();
 

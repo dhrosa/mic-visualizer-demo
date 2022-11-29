@@ -42,8 +42,6 @@ TEST(SimulatedSourceTest, SourceLastSamplesMatch) {
 
   auto& last = source();
   EXPECT_THAT(last, SizeIs(96'000));
-  EXPECT_THAT(last.span().first(5952),
-              ElementsAreArray(samples.last(5952)));
-  EXPECT_THAT(last.span().last(90048),
-              ElementsAreArray(samples.first(90048)));
+  EXPECT_THAT(last.span().first(5952), ElementsAreArray(samples.last(5952)));
+  EXPECT_THAT(last.span().last(90048), ElementsAreArray(samples.first(90048)));
 }
