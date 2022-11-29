@@ -33,15 +33,6 @@ enable_testing()
 
 find_package(Qt6 REQUIRED COMPONENTS Widgets)
 
-add_library(generator INTERFACE generator.h)
-target_include_directories(generator INTERFACE .)
-target_link_libraries(generator INTERFACE absl::cleanup)
-
-add_executable(generator_test generator_test.cc)
-target_link_libraries(generator_test generator gmock
-                      absl::failure_signal_handler gtest)
-gtest_discover_tests(generator_test)
-
 add_subdirectory(diy)
 add_subdirectory(audio)
 add_subdirectory(gui)

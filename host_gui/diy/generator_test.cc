@@ -1,6 +1,5 @@
 #include "generator.h"
 
-#include <absl/debugging/failure_signal_handler.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
@@ -56,10 +55,4 @@ TEST(IteratorTest, Iota) {
   }();
 
   EXPECT_THAT(ToVector(gen | std::views::take(3)), ElementsAre(0, 1, 2));
-}
-
-int main(int argc, char** argv) {
-  absl::InstallFailureSignalHandler({});
-  testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
 }
