@@ -31,17 +31,15 @@ std::vector<double> PowerSpectrum(std::span<const std::int16_t> samples) {
   const std::size_t conjugate_bin_count = (n - 2) / 2;
   const std::size_t nyquist_index = 1 + conjugate_bin_count;
 
-  auto ac = spectrum | std::views::take(1);
-  auto positive_ac = ac | std::views::take(conjugate_bin_count);
-  auto negative_ac =
-      ac | std::views::reverse | std::views::take(conjugate_bin_count);
+  auto positive_ac =
+      spectrum | std::views::drop(1) | std::views::take(conjugate_bin_count);
 
   std::vector<double> power_spectrum(2 + conjugate_bin_count);
   power_spectrum[0] = spectrum[0].real();
   power_spectrum[nyquist_index] = spectrum[nyquist_index].real();
 
-  std::ranges::transform(positive_ac, negative_ac, ++power_spectrum.begin(),
-                         [](auto a, auto b) { return std::norm(a + b); });
+  std::ranges::transform(positive_ac, ++power_spectrum.begin(),
+                         [](auto x) { return x.real() * x.real(); });
 
   return power_spectrum;
 }
