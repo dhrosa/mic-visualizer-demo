@@ -18,6 +18,11 @@ class Buffer {
   Buffer() noexcept = default;
   Buffer(std::span<T> span, absl::AnyInvocable<void() &&> cleanup) noexcept
       : span_(span), cleanup_(std::move(cleanup)) {}
+
+  // Convenience factory that creates a buffer of the given size with
+  // uninitialized contents.
+  static Buffer<T> Uninitialized(std::size_t n) noexcept;
+
   ~Buffer() {
     if (cleanup_) {
       std::move(cleanup_)();
@@ -41,7 +46,17 @@ class Buffer {
     return span_[i];
   }
 
+  std::span<T>::reference front() const noexcept { return span_.front(); }
+  std::span<T>::reference back() const noexcept { return span_.back(); }
+
  private:
   std::span<T> span_;
   absl::AnyInvocable<void() &&> cleanup_;
 };
+
+template <typename T>
+Buffer<T> Buffer<T>::Uninitialized(std::size_t n) noexcept {
+  auto storage = std::make_unique_for_overwrite<T[]>(n);
+  std::span<T> span(storage.get(), n);
+  return Buffer(span, [storage = std::move(storage)] {});
+}

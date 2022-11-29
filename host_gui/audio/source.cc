@@ -25,12 +25,10 @@ Buffer<std::int16_t> PeriodicSubspan(std::span<const std::int16_t> s,
   const std::size_t remaining = count - first.size();
   const std::span second = s.subspan(0, remaining);
 
-  auto storage = std::make_unique_for_overwrite<std::int16_t[]>(count);
-  std::span<std::int16_t> data(storage.get(), count);
-
+  auto data = Buffer<std::int16_t>::Uninitialized(count);
   std::ranges::copy(first, data.begin());
   std::ranges::copy(second, data.begin() + first.size());
-  return Buffer<std::int16_t>(data, [storage = std::move(storage)] {});
+  return data;
 }
 }  // namespace
 

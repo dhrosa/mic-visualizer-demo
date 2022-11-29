@@ -56,14 +56,12 @@ Buffer<double> PowerSpectrum(std::span<const std::int16_t> samples) {
 
   auto power = [&](auto x) { return 4 * std::norm(x) / norm; };
 
-  auto storage =
-      std::make_unique_for_overwrite<double[]>(2 + conjugate_bin_count);
-  auto power_spectrum =
-      std::span<double>(storage.get(), 2 + conjugate_bin_count);
+  // TODO(dhrosa): We could reuse the buffer returned by Spectrum().
+  auto power_spectrum = Buffer<double>::Uninitialized(2 + conjugate_bin_count);
   power_spectrum.front() = power(spectrum[0]);
   power_spectrum.back() = power(spectrum[nyquist_index]);
   std::ranges::transform(positive_ac, ++power_spectrum.begin(), power);
-  return Buffer<double>(power_spectrum, [storage = std::move(storage)] {});
+  return power_spectrum;
 }
 
 std::vector<double> FrequencyBins(std::size_t n, double fs) {
