@@ -23,3 +23,25 @@ std::vector<std::complex<double>> Spectrum(
   fftw_execute(plan);
   return spectrum;
 }
+
+std::vector<double> PowerSpectrum(std::span<const std::int16_t> samples) {
+  const std::vector<std::complex<double>> spectrum = Spectrum(samples);
+  const std::size_t n = samples.size();
+  // DC bin and nyquist bins are the only bins that don't have a conjugate pair
+  const std::size_t conjugate_bin_count = (n - 2) / 2;
+  const std::size_t nyquist_index = 1 + conjugate_bin_count;
+
+  auto ac = spectrum | std::views::take(1);
+  auto positive_ac = ac | std::views::take(conjugate_bin_count);
+  auto negative_ac =
+      ac | std::views::reverse | std::views::take(conjugate_bin_count);
+
+  std::vector<double> power_spectrum(2 + conjugate_bin_count);
+  power_spectrum[0] = spectrum[0].real();
+  power_spectrum[nyquist_index] = spectrum[nyquist_index].real();
+
+  std::ranges::transform(positive_ac, negative_ac, ++power_spectrum.begin(),
+                         [](auto a, auto b) { return std::norm(a + b); });
+
+  return power_spectrum;
+}
