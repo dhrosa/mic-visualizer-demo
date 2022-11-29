@@ -5,7 +5,6 @@
 
 #include <algorithm>
 #include <complex>
-#include <iostream>
 #include <ranges>
 
 namespace {
@@ -43,8 +42,6 @@ std::vector<double> PowerSpectrum(std::span<const std::int16_t> samples) {
   // DC bin and nyquist bins are the only bins that don't have a conjugate pair
   const std::size_t conjugate_bin_count = (n - 2) / 2;
   const std::size_t nyquist_index = n / 2;
-
-  std::cout << nyquist_index << std::endl;
 
   auto positive_ac =
       spectrum | std::views::drop(1) | std::views::take(conjugate_bin_count);
