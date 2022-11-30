@@ -1,6 +1,5 @@
 #include "spectrum.h"
 
-#include <absl/cleanup/cleanup.h>
 #include <fftw3.h>
 
 #include <algorithm>
@@ -35,8 +34,22 @@ Buffer<std::complex<double>> FftwBuffer(std::size_t n) {
   return Buffer<std::complex<double>>({raw, n}, [raw] { fftw_free(raw); });
 }
 
-Buffer<std::complex<double>> Spectrum(std::span<const std::int16_t> samples,
-                                      std::span<const double> window) {
+struct Plan {
+  fftw_plan plan;
+  ~Plan() { fftw_destroy_plan(plan); }
+};
+
+Plan CreatePlan(std::size_t n) {
+  auto source = FftwBuffer(n);
+  auto dest = FftwBuffer(n);
+  return {fftw_plan_dft_1d(n, reinterpret_cast<fftw_complex*>(source.data()),
+                           reinterpret_cast<fftw_complex*>(dest.data()),
+                           FFTW_FORWARD, FFTW_ESTIMATE)};
+}
+
+Buffer<std::complex<double>> Spectrum(fftw_plan plan,
+                                      std::span<const double> window,
+                                      std::span<const std::int16_t> samples) {
   const std::size_t n = samples.size();
   // TODO(dhrosa): This can be an in-place FFT, as this buffer is only used
   // within this function.
@@ -45,13 +58,9 @@ Buffer<std::complex<double>> Spectrum(std::span<const std::int16_t> samples,
                          [](std::int16_t s, double w) { return w * s; });
 
   Buffer<std::complex<double>> spectrum = FftwBuffer(n);
-  fftw_plan plan = fftw_plan_dft_1d(
-      n, reinterpret_cast<fftw_complex*>(complex_samples.data()),
-      reinterpret_cast<fftw_complex*>(spectrum.data()), FFTW_FORWARD,
-      FFTW_ESTIMATE);
-  auto plan_cleanup = absl::MakeCleanup([&]() { fftw_destroy_plan(plan); });
-
-  fftw_execute(plan);
+  fftw_execute_dft(plan,
+                   reinterpret_cast<fftw_complex*>(complex_samples.data()),
+                   reinterpret_cast<fftw_complex*>(spectrum.data()));
   return spectrum;
 }
 
@@ -85,12 +94,13 @@ Generator<std::vector<T>> ChunkedSamples(std::size_t n,
 
 // PSD scaling based off of https://dsp.stackexchange.com/a/32205 and
 // https://dsp.stackexchange.com/a/47603
-Buffer<double> SingleFramePowerSpectrum(std::span<const double> window,
+Buffer<double> SingleFramePowerSpectrum(fftw_plan plan,
+                                        std::span<const double> window,
                                         double psd_scale_factor,
                                         std::span<const std::int16_t> samples) {
   const std::size_t n = samples.size();
   CheckEven(n);
-  Buffer<std::complex<double>> spectrum = Spectrum(samples, window);
+  Buffer<std::complex<double>> spectrum = Spectrum(plan, window, samples);
   // DC bin and nyquist bins are the only bins that don't have a conjugate pair.
   const std::size_t conjugate_bin_count = (n - 2) / 2;
   const std::size_t nyquist_index = n / 2;
@@ -125,8 +135,10 @@ Generator<Buffer<double>> PowerSpectrum(
   CheckEven(window_size);
   const std::vector<double> window = Window(window_size);
   const double psd_scale_factor = ScaleFactor(window) / (2 * sample_rate);
+  const Plan plan = CreatePlan(window_size);
   for (std::vector<std::int16_t> frame : ChunkedSamples(window_size, source)) {
-    co_yield SingleFramePowerSpectrum(window, psd_scale_factor, frame);
+    co_yield SingleFramePowerSpectrum(plan.plan, window, psd_scale_factor,
+                                      frame);
   }
   co_return;
 }
