@@ -3,6 +3,8 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include <ranges>
+
 using testing::ElementsAre;
 using testing::SizeIs;
 
@@ -11,43 +13,48 @@ void PrintTo(const Buffer<T>& buffer, std::ostream* s) {
   *s << testing::PrintToString(std::vector<T>(buffer.begin(), buffer.end()));
 }
 
-// Generator<Buffer<std::int16_t>> Source() {
-//   co_yield Buffer<std::int16_t>();
-// }
+Generator<Buffer<std::int16_t>> Source(std::initializer_list<std::int16_t> head,
+                                       auto... tail) {
+  std::initializer_list<std::int16_t> frames[] = {head, tail...};
+  for (auto frame : frames) {
+    auto buffer = Buffer<std::int16_t>::Uninitialized(frame.size());
+    std::ranges::copy(frame, buffer.begin());
+    co_yield std::move(buffer);
+  }
+}
 
 TEST(SpectrumTest, OddSizeThrowsError) {
-  const std::int16_t samples[] = {0, 0, 0};
-  EXPECT_THROW(PowerSpectrum(samples, 2), std::invalid_argument);
+  EXPECT_THROW(PowerSpectrum(2, 3, Source({0}))(), std::invalid_argument);
 }
 
 TEST(SpectrumTest, Zero) {
-  const std::int16_t samples[] = {0, 0, 0, 0};
-  EXPECT_THAT(PowerSpectrum(samples), ElementsAre(0, 0, 0));
+  EXPECT_THAT(PowerSpectrum(2, 4, Source({0, 0, 0, 0}))(),
+              ElementsAre(0, 0, 0));
 }
 
 TEST(SpectrumTest, Dc) {
-  const std::int16_t samples[] = {1, 1, 1, 1};
-  EXPECT_THAT(PowerSpectrum(samples, 2), ElementsAre(1, 0, 0));
+  EXPECT_THAT(PowerSpectrum(2, 4, Source({1, 1, 1, 1}))(),
+              ElementsAre(1, 0, 0));
 }
 
 TEST(SpectrumTest, NyquistRate) {
-  const std::int16_t samples[] = {1, -1, 1, -1};
-  EXPECT_THAT(PowerSpectrum(samples, 2), ElementsAre(0, 0, 1));
+  EXPECT_THAT(PowerSpectrum(2, 4, Source({1, -1, 1, -1}))(),
+              ElementsAre(0, 0, 1));
 }
 
 TEST(SpectrumTest, DcAndNyquist) {
-  const std::int16_t samples[] = {2, 0, 2, 0};
-  EXPECT_THAT(PowerSpectrum(samples, 2), ElementsAre(1, 0, 1));
+  EXPECT_THAT(PowerSpectrum(2, 4, Source({2, 0, 2, 0}))(),
+              ElementsAre(1, 0, 1));
 }
 
 TEST(SpectrumTest, Cosine) {
-  const std::int16_t samples[] = {1, 0, -1, 0};
-  EXPECT_THAT(PowerSpectrum(samples, 2), ElementsAre(0, 0.5, 0));
+  EXPECT_THAT(PowerSpectrum(2, 4, Source({1, 0, -1, 0}))(),
+              ElementsAre(0, 0.5, 0));
 }
 
 TEST(SpectrumTest, Sine) {
-  const std::int16_t samples[] = {0, 1, 0, -1};
-  EXPECT_THAT(PowerSpectrum(samples, 2), ElementsAre(0, 0.5, 0));
+  EXPECT_THAT(PowerSpectrum(2, 4, Source({0, 1, 0, -1}))(),
+              ElementsAre(0, 0.5, 0));
 }
 
 TEST(BinsTest, EvenSize) {

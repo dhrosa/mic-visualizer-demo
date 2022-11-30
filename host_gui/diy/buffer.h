@@ -5,7 +5,6 @@
 #include <ranges>
 #include <span>
 
-
 // An std::contiguous_range modeling a std::span with an RAII cleanup function
 // that takes care of cleaning the data backing the span.
 //
@@ -37,7 +36,7 @@ class Buffer : public std::ranges::view_interface<Buffer<T>> {
   std::span<T> span() const noexcept { return span_; }
   auto begin() const noexcept { return span_.begin(); }
   auto end() const noexcept { return span_.end(); }
-  
+
  private:
   std::span<T> span_;
   absl::AnyInvocable<void() &&> cleanup_;
