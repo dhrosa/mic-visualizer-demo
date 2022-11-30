@@ -15,6 +15,14 @@ namespace {
 // TODO(dhrosa): Replace with more general window functions.
 std::vector<double> Window(std::size_t n) { return std::vector<double>(n, 1); }
 
+double ScaleFactor(std::span<const double> window) {
+  double factor = 0;
+  for (double w : window) {
+    factor += w * w;
+  }
+  return factor / (window.size() * window.size());
+}
+
 Buffer<std::complex<double>> FftwBuffer(std::size_t n) {
   auto* raw = reinterpret_cast<std::complex<double>*>(fftw_alloc_complex(n));
   return Buffer<std::complex<double>>({raw, n}, [raw] { fftw_free(raw); });
@@ -48,7 +56,9 @@ void CheckEven(std::size_t n) {
 }
 }  // namespace
 
-Buffer<double> PowerSpectrum(std::span<const std::int16_t> samples) {
+// PSD scaling based off of https://dsp.stackexchange.com/a/32205
+
+Buffer<double> PowerSpectrum(std::span<const std::int16_t> samples, double fs) {
   const std::size_t n = samples.size();
   CheckEven(n);
   const std::vector<double> window = Window(n);
@@ -61,13 +71,16 @@ Buffer<double> PowerSpectrum(std::span<const std::int16_t> samples) {
   auto positive_ac =
       spectrum | std::views::drop(1) | std::views::take(conjugate_bin_count);
 
-  auto power = [&](auto x) { return 4 * std::norm(x) / norm; };
+  const double psd_scale_factor = ScaleFactor(window) / (2 * fs);
 
   // TODO(dhrosa): We could reuse the buffer returned by Spectrum().
   auto power_spectrum = Buffer<double>::Uninitialized(2 + conjugate_bin_count);
-  power_spectrum.front() = power(spectrum[0]);
-  power_spectrum.back() = power(spectrum[nyquist_index]);
-  std::ranges::transform(positive_ac, ++power_spectrum.begin(), power);
+  power_spectrum.front() = psd_scale_factor * std::norm(spectrum[0]);
+  power_spectrum.back() = psd_scale_factor * std::norm(spectrum[nyquist_index]);
+  std::ranges::transform(positive_ac, power_spectrum.begin() + 1,
+                         [&](std::complex<double> s) {
+                           return 2 * psd_scale_factor * std::norm(s);
+                         });
   return power_spectrum;
 }
 
