@@ -48,6 +48,31 @@ Buffer<std::complex<double>> Spectrum(std::span<const std::int16_t> samples,
   return spectrum;
 }
 
+template <typename T>
+Generator<std::vector<T>> ChunkedSamples(std::size_t n,
+                                         Generator<Buffer<T>> source) {
+  std::vector<T> chunk(n);
+  std::span<T> unfilled_chunk_span(chunk);
+  auto source_iter = source.begin();
+  std::span<T> current_source_span = source_iter->span();
+  while (true) {
+    const std::size_t copy_count =
+        std::min(unfilled_chunk_span.size(), current_source_span.size());
+    std::ranges::copy(current_source_span.first(copy_count),
+                      unfilled_chunk_span.begin());
+    current_source_span = current_source_span.subspan(copy_count);
+    unfilled_chunk_span = unfilled_chunk_span.subspan(copy_count);
+    if (unfilled_chunk_span.empty()) {
+      co_yield chunk;
+      unfilled_chunk_span = chunk;
+    }
+    if (current_source_span.empty()) {
+      ++source_iter;
+      current_source_span = source_iter->span();
+    }
+  }
+}
+
 void CheckEven(std::size_t n) {
   if (n % 2 != 0) {
     throw std::invalid_argument("FFT length must be even. Got: " +
@@ -91,4 +116,12 @@ std::vector<double> FrequencyBins(std::size_t n, double fs) {
     bins[i] = fs * i / n;
   }
   return bins;
+}
+
+Generator<Buffer<double>> PowerSpectrum(
+    double sample_rate, std::size_t window_size,
+    Generator<Buffer<std::int16_t>> source) {
+  for (std::vector<std::int16_t> frame : ChunkedSamples(window_size, source)) {
+    co_yield Buffer<double>();
+  }
 }

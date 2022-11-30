@@ -35,7 +35,7 @@ class Generator {
   // If begin() has already been called, the next call will correspond
   // to the next value of the sequence, not the original first value.
   std::input_iterator auto begin() const { return ++iter_; }
-  std::input_iterator auto end() const { return iter_; }
+  std::input_iterator auto end() const { return Iterator{}; }
 
  private:
   std::shared_ptr<HandleCleanup> shared_handle_;
@@ -84,7 +84,7 @@ struct Generator<T>::Iterator {
   using iterator_category = std::input_iterator_tag;
 
   T& operator*() const { return handle.promise().value; }
-  T* operator->() const { return &handle.promise().value(); }
+  T* operator->() const { return &handle.promise().value; }
 
   Iterator& operator++() {
     handle.resume();
