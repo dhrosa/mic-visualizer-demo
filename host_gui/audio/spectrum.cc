@@ -66,6 +66,9 @@ Generator<std::vector<T>> ChunkedSamples(std::size_t n,
   std::vector<T> chunk(n);
   std::span<T> unfilled_chunk_span(chunk);
   auto source_iter = source.begin();
+  if (source_iter == source.end()) {
+    co_return;
+  }
   std::span<T> current_source_span = source_iter->span();
   while (true) {
     if (current_source_span.empty()) {

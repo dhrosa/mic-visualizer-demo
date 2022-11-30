@@ -72,6 +72,30 @@ TEST(SpectrumTest, MergesFrames) {
   EXPECT_THAT(gen(), ElementsAre(0, 0, 1));
 }
 
+template <std::ranges::range R>
+auto ToVector(R&& r) {
+  using T = std::ranges::range_value_t<R>;
+  std::vector<T> values;
+  std::ranges::move(r, std::back_inserter(values));
+  return values;
+}
+
+TEST(SpectrumTest, EmptyInput) {
+  EXPECT_THAT(ToVector(PowerSpectrum(2, 4, SingleFrameSource({}))),
+              testing::SizeIs(0));
+}
+
+TEST(SpectrumTest, CleanlyTruncatedInput) {
+  EXPECT_THAT(ToVector(PowerSpectrum(2, 4, SingleFrameSource({1, 1, 1, 1}))),
+              ElementsAre(ElementsAre(1, 0, 0)));
+}
+
+TEST(SpectrumTest, TruncatedInput) {
+  EXPECT_THAT(
+      ToVector(PowerSpectrum(2, 4, SingleFrameSource({1, 1, 1, 1, 0, 0}))),
+      ElementsAre(ElementsAre(1, 0, 0)));
+}
+
 TEST(BinsTest, EvenSize) {
   EXPECT_THAT(FrequencyBins(10, 1000), ElementsAre(0, 100, 200, 300, 400, 500));
 }
