@@ -84,18 +84,16 @@ Generator<std::vector<T>> ChunkedSamples(std::size_t n,
 }
 
 // PSD scaling based off of https://dsp.stackexchange.com/a/32205
-Buffer<double> SingleFramePowerSpectrum(std::span<const std::int16_t> samples,
-                                        double fs) {
+Buffer<double> SingleFramePowerSpectrum(std::span<const double> window,
+                                        double psd_scale_factor,
+                                        std::span<const std::int16_t> samples) {
   const std::size_t n = samples.size();
   CheckEven(n);
-  const std::vector<double> window = Window(n);
   Buffer<std::complex<double>> spectrum = Spectrum(samples, window);
-  const std::size_t norm = n * n;
   // DC bin and nyquist bins are the only bins that don't have a conjugate pair.
   const std::size_t conjugate_bin_count = (n - 2) / 2;
   const std::size_t nyquist_index = n / 2;
 
-  const double psd_scale_factor = ScaleFactor(window) / (2 * fs);
   // TODO(dhrosa): We could reuse the buffer returned by Spectrum().
   auto power_spectrum = Buffer<double>::Uninitialized(2 + conjugate_bin_count);
   power_spectrum.front() = psd_scale_factor * std::norm(spectrum[0]);
@@ -124,7 +122,10 @@ Generator<Buffer<double>> PowerSpectrum(
     double sample_rate, std::size_t window_size,
     Generator<Buffer<std::int16_t>> source) {
   CheckEven(window_size);
+  const std::vector<double> window = Window(window_size);
+  const double psd_scale_factor = ScaleFactor(window) / (2 * sample_rate);
   for (std::vector<std::int16_t> frame : ChunkedSamples(window_size, source)) {
-    co_yield SingleFramePowerSpectrum(frame, sample_rate);
+    co_yield SingleFramePowerSpectrum(window, psd_scale_factor, frame);
   }
+  co_return;
 }
