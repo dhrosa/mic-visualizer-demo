@@ -51,17 +51,13 @@ Buffer<std::complex<double>> Spectrum(fftw_plan plan,
                                       std::span<const double> window,
                                       std::span<const std::int16_t> samples) {
   const std::size_t n = samples.size();
-  // TODO(dhrosa): This can be an in-place FFT, as this buffer is only used
-  // within this function.
-  Buffer<std::complex<double>> complex_samples = FftwBuffer(n);
-  std::ranges::transform(samples, window, complex_samples.begin(),
+  Buffer<std::complex<double>> buffer = FftwBuffer(n);
+  std::ranges::transform(samples, window, buffer.begin(),
                          [](std::int16_t s, double w) { return w * s; });
-
-  Buffer<std::complex<double>> spectrum = FftwBuffer(n);
-  fftw_execute_dft(plan,
-                   reinterpret_cast<fftw_complex*>(complex_samples.data()),
-                   reinterpret_cast<fftw_complex*>(spectrum.data()));
-  return spectrum;
+  auto* buffer_data = reinterpret_cast<fftw_complex*>(buffer.data());
+  // In-place FFT.
+  fftw_execute_dft(plan, buffer_data, buffer_data);
+  return buffer;
 }
 
 template <typename T>

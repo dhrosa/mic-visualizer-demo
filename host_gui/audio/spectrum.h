@@ -1,8 +1,6 @@
 #pragma once
 
-#include <complex>
 #include <cstdint>
-#include <span>
 #include <vector>
 
 #include "buffer.h"
