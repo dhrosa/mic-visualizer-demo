@@ -83,7 +83,8 @@ Generator<std::vector<T>> ChunkedSamples(std::size_t n,
   }
 }
 
-// PSD scaling based off of https://dsp.stackexchange.com/a/32205
+// PSD scaling based off of https://dsp.stackexchange.com/a/32205 and
+// https://dsp.stackexchange.com/a/47603
 Buffer<double> SingleFramePowerSpectrum(std::span<const double> window,
                                         double psd_scale_factor,
                                         std::span<const std::int16_t> samples) {

@@ -65,8 +65,7 @@ TEST(SpectrumTest, Sine) {
 TEST(SpectrumTest, MergesFrames) {
   auto gen = PowerSpectrum(
       2, 4,
-      Source(
-	     {{0, 0, 0}, {0, 1}, {1, 1}, {1, 0, 1, 0, -1, 1, -1, 1, -1, 1}}));
+      Source({{0, 0, 0}, {0, 1}, {1, 1}, {1, 0, 1, 0, -1, 1, -1, 1, -1, 1}}));
   EXPECT_THAT(gen(), ElementsAre(0, 0, 0));
   EXPECT_THAT(gen(), ElementsAre(1, 0, 0));
   EXPECT_THAT(gen(), ElementsAre(0, 0.5, 0));
