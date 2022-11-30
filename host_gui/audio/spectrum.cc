@@ -10,18 +10,24 @@
 
 namespace {
 
+// Simple rectangular window.
+//
+// TODO(dhrosa): Replace with more general window functions.
+std::vector<double> Window(std::size_t n) { return std::vector<double>(n, 1); }
+
 Buffer<std::complex<double>> FftwBuffer(std::size_t n) {
   auto* raw = reinterpret_cast<std::complex<double>*>(fftw_alloc_complex(n));
   return Buffer<std::complex<double>>({raw, n}, [raw] { fftw_free(raw); });
 }
 
-Buffer<std::complex<double>> Spectrum(std::span<const std::int16_t> samples) {
+Buffer<std::complex<double>> Spectrum(std::span<const std::int16_t> samples,
+                                      std::span<const double> window) {
   const std::size_t n = samples.size();
   // TODO(dhrosa): This can be an in-place FFT, as this buffer is only used
   // within this function.
   Buffer<std::complex<double>> complex_samples = FftwBuffer(n);
-  std::ranges::transform(samples, complex_samples.begin(),
-                         [](auto x) { return static_cast<double>(x); });
+  std::ranges::transform(samples, window, complex_samples.begin(),
+                         [](std::int16_t s, double w) { return w * s; });
 
   Buffer<std::complex<double>> spectrum = FftwBuffer(n);
   fftw_plan plan = fftw_plan_dft_1d(
@@ -45,7 +51,8 @@ void CheckEven(std::size_t n) {
 Buffer<double> PowerSpectrum(std::span<const std::int16_t> samples) {
   const std::size_t n = samples.size();
   CheckEven(n);
-  const Buffer<std::complex<double>> spectrum = Spectrum(samples);
+  const std::vector<double> window = Window(n);
+  const Buffer<std::complex<double>> spectrum = Spectrum(samples, window);
   const std::size_t norm = n * n;
   // DC bin and nyquist bins are the only bins that don't have a conjugate pair.
   const std::size_t conjugate_bin_count = (n - 2) / 2;
