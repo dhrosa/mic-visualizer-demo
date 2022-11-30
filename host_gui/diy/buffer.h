@@ -2,7 +2,9 @@
 
 #include <absl/functional/any_invocable.h>
 
+#include <ranges>
 #include <span>
+
 
 // Models a std::span with an RAII cleanup function that takes care of
 // cleaning the data backing the span.
@@ -11,7 +13,7 @@
 // backed in versatile ways (e.g. by an std::vector, allocated with
 // special alignment, etc...).
 template <typename T>
-class Buffer {
+class Buffer : public std::ranges::view_interface<Buffer<T>> {
  public:
   using value_type = std::span<T>::value_type;
 

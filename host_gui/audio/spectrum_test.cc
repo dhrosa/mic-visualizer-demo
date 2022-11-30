@@ -11,6 +11,10 @@ void PrintTo(const Buffer<T>& buffer, std::ostream* s) {
   *s << testing::PrintToString(std::vector<T>(buffer.begin(), buffer.end()));
 }
 
+// Generator<Buffer<std::int16_t>> Source() {
+//   co_yield Buffer<std::int16_t>();
+// }
+
 TEST(SpectrumTest, OddSizeThrowsError) {
   const std::int16_t samples[] = {0, 0, 0};
   EXPECT_THROW(PowerSpectrum(samples, 2), std::invalid_argument);

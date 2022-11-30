@@ -87,21 +87,22 @@ Buffer<double> PowerSpectrum(std::span<const std::int16_t> samples, double fs) {
   const std::size_t n = samples.size();
   CheckEven(n);
   const std::vector<double> window = Window(n);
-  const Buffer<std::complex<double>> spectrum = Spectrum(samples, window);
+  Buffer<std::complex<double>> spectrum = Spectrum(samples, window);
   const std::size_t norm = n * n;
   // DC bin and nyquist bins are the only bins that don't have a conjugate pair.
   const std::size_t conjugate_bin_count = (n - 2) / 2;
   const std::size_t nyquist_index = n / 2;
 
-  auto positive_ac =
-      spectrum | std::views::drop(1) | std::views::take(conjugate_bin_count);
-
   const double psd_scale_factor = ScaleFactor(window) / (2 * fs);
-
   // TODO(dhrosa): We could reuse the buffer returned by Spectrum().
   auto power_spectrum = Buffer<double>::Uninitialized(2 + conjugate_bin_count);
   power_spectrum.front() = psd_scale_factor * std::norm(spectrum[0]);
   power_spectrum.back() = psd_scale_factor * std::norm(spectrum[nyquist_index]);
+  auto positive_ac =
+    std::move(spectrum) | std::views::drop(1) | std::views::take(conjugate_bin_count);
+
+
+  
   std::ranges::transform(positive_ac, power_spectrum.begin() + 1,
                          [&](std::complex<double> s) {
                            return 2 * psd_scale_factor * std::norm(s);
@@ -121,6 +122,7 @@ std::vector<double> FrequencyBins(std::size_t n, double fs) {
 Generator<Buffer<double>> PowerSpectrum(
     double sample_rate, std::size_t window_size,
     Generator<Buffer<std::int16_t>> source) {
+  CheckEven(window_size);
   for (std::vector<std::int16_t> frame : ChunkedSamples(window_size, source)) {
     co_yield Buffer<double>();
   }
