@@ -6,8 +6,8 @@
 #include <span>
 
 
-// Models a std::span with an RAII cleanup function that takes care of
-// cleaning the data backing the span.
+// An std::contiguous_range modeling a std::span with an RAII cleanup function
+// that takes care of cleaning the data backing the span.
 //
 // This allows for cheaply passing around contiguous data that can be
 // backed in versatile ways (e.g. by an std::vector, allocated with
@@ -36,21 +36,8 @@ class Buffer : public std::ranges::view_interface<Buffer<T>> {
 
   std::span<T> span() const noexcept { return span_; }
   auto begin() const noexcept { return span_.begin(); }
-  auto begin() noexcept { return span_.begin(); }
   auto end() const noexcept { return span_.end(); }
-  auto end() noexcept { return span_.end(); }
-
-  std::span<T>::pointer data() const noexcept { return span_.data(); }
-  std::size_t size() const noexcept { return span_.size(); }
-  bool empty() const noexcept { return span_.empty(); }
-
-  std::span<T>::reference operator[](std::size_t i) const noexcept {
-    return span_[i];
-  }
-
-  std::span<T>::reference front() const noexcept { return span_.front(); }
-  std::span<T>::reference back() const noexcept { return span_.back(); }
-
+  
  private:
   std::span<T> span_;
   absl::AnyInvocable<void() &&> cleanup_;
