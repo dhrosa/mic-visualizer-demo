@@ -17,7 +17,7 @@ set_source_files_properties(cardinal.o PROPERTIES EXTERNAL_OBJECT true GENERATED
 set_target_properties(cardinal PROPERTIES LINKER_LANGUAGE C)
 
 diy_cc_library(
-  NAME audio_source
+  audio_source
   HEADERS source.h
   SOURCES source.cc
   LIBRARIES cardinal generator buffer absl::time)
@@ -28,7 +28,7 @@ diy_add_test(
   LIBRARIES audio_source)
 
 diy_cc_library(
-  NAME audio_spectrum
+  audio_spectrum
   HEADERS spectrum.h
   SOURCES spectrum.cc
   LIBRARIES fftw3 generator buffer)

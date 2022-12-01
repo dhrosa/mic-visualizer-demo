@@ -14,27 +14,26 @@ function(diy_add_test name)
   gtest_discover_tests(${name} DISCOVERY_MODE PRE_TEST)
 endfunction()
 
-function(diy_cc_library)
+function(diy_cc_library name)
   set(options STATIC)
-  set(single_value_args NAME)
+  set(single_value_args "")
   set(multi_value_args HEADERS SOURCES LIBRARIES)
-  cmake_parse_arguments(DIY_CC_LIB "${options}" "${single_value_args}"
+  cmake_parse_arguments("" "${options}" "${single_value_args}"
                         "${multi_value_args}" ${ARGN})
   set(library_type "")
-  set(name ${DIY_CC_LIB_NAME})
-  if(DIY_CC_LIB_SRCS STREQUAL "")
+  if(_SRCS STREQUAL "")
     set(library_type INTERFACE)
-  elseif(DIY_CC_LIB_STATIC)
+  elseif(_STATIC)
     set(library_type STATIC)
   endif()
   add_library(${name} ${library_type})
-  target_sources(${name} PRIVATE ${DIY_CC_LIB_HEADERS} ${DIY_CC_LIB_SOURCES})
+  target_sources(${name} PRIVATE ${_HEADERS} ${_SOURCES})
   set_property(TARGET ${name} PROPERTY LINKER_LANGUAGE CXX)
-  target_link_libraries(${name} ${DIY_CC_LIB_LIBRARIES})
+  target_link_libraries(${name} ${_LIBRARIES})
 endfunction()
 
 diy_cc_library(
-  NAME generator
+  generator
   HEADERS generator.h
   LIBRARIES absl::cleanup)
 
@@ -42,7 +41,7 @@ diy_add_test(generator_test SOURCES generator_test.cc)
 target_link_libraries(generator_test generator)
 
 diy_cc_library(
-  NAME buffer
+  buffer
   HEADERS buffer.h
   LIBRARIES absl::any_invocable)
 diy_add_test(
