@@ -8,17 +8,53 @@ add_custom_command(
   DEPENDS generate_colormaps.py
   VERBATIM)
 
-add_library(colormaps STATIC colormaps.h colormaps.cc colormaps.gen.cc)
+diy_cc_library(
+  NAME
+  colormaps
+  STATIC
+  HEADERS
+  colormaps.h
+  SOURCES
+  colormaps.cc
+  colormaps.gen.cc)
 target_include_directories(colormaps PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
                                              ${CMAKE_CURRENT_BINARY_DIR})
 
-add_library(image_viewer STATIC image_viewer.h image_viewer.cc)
-target_link_libraries(image_viewer PRIVATE Qt6::Widgets colormaps)
+diy_cc_library(
+  NAME
+  image_viewer
+  STATIC
+  HEADERS
+  image_viewer.h
+  SOURCES
+  image_viewer.cc
+  LIBRARIES
+  Qt6::Widgets
+  colormaps)
 
-add_library(colormap_picker STATIC colormap_picker.h colormap_picker.cc)
-target_link_libraries(colormap_picker PRIVATE Qt6::Widgets colormaps)
+diy_cc_library(
+  NAME
+  colormap_picker
+  STATIC
+  HEADERS
+  colormap_picker.h
+  SOURCES
+  colormap_picker.cc
+  LIBRARIES
+  Qt6::Widgets
+  colormaps)
 
-add_library(main_window STATIC main_window.h main_window.cc)
-target_link_libraries(main_window PRIVATE Qt6::Widgets colormaps image_viewer
-                                          colormap_picker)
+diy_cc_library(
+  NAME
+  main_window
+  STATIC
+  HEADERS
+  main_window.h
+  SOURCES
+  main_window.cc
+  LIBRARIES
+  Qt6::Widgets
+  colormaps
+  image_viewer
+  colormap_picker)
 set_property(TARGET main_window PROPERTY AUTOMOC ON)

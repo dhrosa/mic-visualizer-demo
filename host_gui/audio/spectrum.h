@@ -3,8 +3,8 @@
 #include <cstdint>
 #include <vector>
 
-#include "buffer.h"
-#include "generator.h"
+#include "diy/buffer.h"
+#include "diy/generator.h"
 
 std::vector<double> FrequencyBins(std::size_t n, double fs);
 

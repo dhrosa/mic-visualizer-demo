@@ -30,8 +30,9 @@ FetchContent_Declare(fftw3 URL "https://www.fftw.org/fftw-3.3.10.tar.gz")
 FetchContent_MakeAvailable(absl googletest fftw3)
 include(GoogleTest)
 enable_testing()
-
 find_package(Qt6 REQUIRED COMPONENTS Widgets)
+
+include_directories(.)
 
 add_subdirectory(diy)
 add_subdirectory(audio)
