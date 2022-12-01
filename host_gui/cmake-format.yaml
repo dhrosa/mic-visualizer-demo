@@ -2,6 +2,9 @@ additional_commands:
   diy_add_test:
     pargs:
       nargs: 1
+    kwargs:
+      SOURCES: +
+      LIBRARIES: +
   diy_cc_library:
     pargs:
       nargs: '*'

@@ -3,10 +3,15 @@ project(diy C CXX)
 
 add_library(test_main STATIC test_main.cc)
 target_link_libraries(test_main gtest absl::failure_signal_handler)
-function(diy_add_test target_name)
-  add_executable("${target_name}" "${ARGN}")
-  target_link_libraries("${target_name}" gmock gtest test_main)
-  gtest_discover_tests("${target_name}" DISCOVERY_MODE PRE_TEST)
+function(diy_add_test name)
+  set(options "")
+  set(single_value_args "")
+  set(multi_value_args SOURCES LIBRARIES)
+  cmake_parse_arguments("" "${options}" "${single_value_args}"
+                        "${multi_value_args}" ${ARGN})
+  add_executable(${name} "${_SOURCES}")
+  target_link_libraries(${name} gmock gtest test_main "${_LIBRARIES}")
+  gtest_discover_tests(${name} DISCOVERY_MODE PRE_TEST)
 endfunction()
 
 function(diy_cc_library)
@@ -33,12 +38,14 @@ diy_cc_library(
   HEADERS generator.h
   LIBRARIES absl::cleanup)
 
-diy_add_test(generator_test generator_test.cc)
+diy_add_test(generator_test SOURCES generator_test.cc)
 target_link_libraries(generator_test generator)
 
 diy_cc_library(
   NAME buffer
   HEADERS buffer.h
   LIBRARIES absl::any_invocable)
-diy_add_test(buffer_test buffer_test.cc)
-target_link_libraries(buffer_test buffer)
+diy_add_test(
+  buffer_test
+  SOURCES buffer_test.cc
+  LIBRARIES buffer)

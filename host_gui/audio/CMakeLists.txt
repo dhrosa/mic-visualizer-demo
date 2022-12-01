@@ -22,8 +22,10 @@ diy_cc_library(
   SOURCES source.cc
   LIBRARIES cardinal generator buffer absl::time)
 
-diy_add_test(audio_source_test source_test.cc)
-target_link_libraries(audio_source_test audio_source)
+diy_add_test(
+  audio_source_test
+  SOURCES source_test.cc
+  LIBRARIES audio_source)
 
 diy_cc_library(
   NAME audio_spectrum
@@ -34,5 +36,7 @@ diy_cc_library(
 # include directories?
 target_include_directories(audio_spectrum PRIVATE ${fftw3_SOURCE_DIR}/api)
 
-diy_add_test(audio_spectrum_test spectrum_test.cc)
-target_link_libraries(audio_spectrum_test audio_spectrum)
+diy_add_test(
+  audio_spectrum_test
+  SOURCES spectrum_test.cc
+  LIBRARIES audio_spectrum)
