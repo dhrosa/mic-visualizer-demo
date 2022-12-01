@@ -28,11 +28,17 @@ function(diy_cc_library)
   target_link_libraries(${name} ${DIY_CC_LIB_LIBRARIES})
 endfunction()
 
-diy_cc_library(NAME generator HEADERS generator.h LIBRARIES absl::cleanup)
+diy_cc_library(
+  NAME generator
+  HEADERS generator.h
+  LIBRARIES absl::cleanup)
 
 diy_add_test(generator_test generator_test.cc)
 target_link_libraries(generator_test generator)
 
-diy_cc_library(NAME buffer HEADERS buffer.h LIBRARIES absl::any_invocable)
+diy_cc_library(
+  NAME buffer
+  HEADERS buffer.h
+  LIBRARIES absl::any_invocable)
 diy_add_test(buffer_test buffer_test.cc)
 target_link_libraries(buffer_test buffer)
