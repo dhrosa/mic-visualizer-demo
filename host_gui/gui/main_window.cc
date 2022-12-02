@@ -1,12 +1,20 @@
 #include "main_window.h"
 
+#include <absl/log/log.h>
+#include <absl/synchronization/notification.h>
+#include <absl/time/clock.h>
+#include <absl/time/time.h>
+
 #include <QDebug>
 #include <QtCore>
 #include <QtGui>
 #include <QtWidgets>
 
+#include "audio/source.h"
 #include "colormap_picker.h"
 #include "colormaps.h"
+#include "diy/buffer.h"
+#include "diy/generator.h"
 #include "image_viewer.h"
 
 namespace {
@@ -25,18 +33,23 @@ void MapColors(const ColorMap& cmap, QImage& image) {
 namespace main_window_internal {
 struct Impl {
   Impl(MainWindow* window);
+  ~Impl();
 
   void initViewer();
   void initToolBar();
   void initStatusBar();
   void initShortcuts();
+  void initUpdateThread();
 
   void SetColormap(int index);
   void Render();
+  void UpdateLoop();
 
   MainWindow* window;
   ImageViewer* viewer;
   const ColorMap* active_colormap = &colormaps()[0];
+  std::thread update_thread;
+  absl::Notification stopping;
 };
 
 Impl::Impl(MainWindow* window) : window(window) {
@@ -44,6 +57,12 @@ Impl::Impl(MainWindow* window) : window(window) {
   initToolBar();
   initStatusBar();
   initShortcuts();
+  initUpdateThread();
+}
+
+Impl::~Impl() {
+  stopping.Notify();
+  update_thread.join();
 }
 
 void Impl::initViewer() {
@@ -69,7 +88,6 @@ void Impl::initToolBar() {
 
 void Impl::initStatusBar() {
   QStatusBar* status_bar = window->statusBar();
-
   auto* frequency_label = new QLabel();
   QFont font = frequency_label->font();
   font.setFamily("monospace");
@@ -84,6 +102,10 @@ void Impl::initShortcuts() {
   new QShortcut(QKeySequence::Quit, window, [&] { window->close(); });
 }
 
+void Impl::initUpdateThread() {
+  update_thread = std::thread([this] { UpdateLoop(); });
+}
+
 void Impl::SetColormap(int index) {
   active_colormap = &colormaps()[index];
   Render();
@@ -92,6 +114,13 @@ void Impl::SetColormap(int index) {
 void Impl::Render() {
   viewer->UpdateImage(
       [&](QImage& image) { MapColors(*active_colormap, image); });
+}
+
+void Impl::UpdateLoop() {
+  while (!stopping.HasBeenNotified()) {
+    absl::SleepFor(absl::Seconds(1));
+    LOG(INFO) << "sup world";
+  }
 }
 
 }  // namespace main_window_internal

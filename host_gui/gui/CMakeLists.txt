@@ -9,27 +9,35 @@ add_custom_command(
   VERBATIM)
 
 diy_cc_library(
-  colormaps STATIC
+  colormaps
   HEADERS colormaps.h
   SOURCES colormaps.cc colormaps.gen.cc)
 target_include_directories(colormaps PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
                                              ${CMAKE_CURRENT_BINARY_DIR})
 
 diy_cc_library(
-  image_viewer STATIC
+  image_viewer
   HEADERS image_viewer.h
   SOURCES image_viewer.cc
   LIBRARIES Qt6::Widgets colormaps)
 
 diy_cc_library(
-  colormap_picker STATIC
+  colormap_picker
   HEADERS colormap_picker.h
   SOURCES colormap_picker.cc
   LIBRARIES Qt6::Widgets colormaps)
 
 diy_cc_library(
-  main_window STATIC
+  main_window
   HEADERS main_window.h
   SOURCES main_window.cc
-  LIBRARIES Qt6::Widgets colormaps image_viewer colormap_picker)
+  LIBRARIES Qt6::Widgets
+            absl::synchronization
+            absl::log
+            absl::time
+            colormaps
+            image_viewer
+            colormap_picker
+            generator
+            buffer)
 set_property(TARGET main_window PROPERTY AUTOMOC ON)

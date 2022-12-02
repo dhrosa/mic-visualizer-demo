@@ -18,7 +18,7 @@ set(ABSL_PROPAGATE_CXX_STD ON)
 FetchContent_Declare(
   absl
   GIT_REPOSITORY "https://github.com/abseil/abseil-cpp.git"
-  GIT_TAG "20220623.1")
+  GIT_TAG 296abbd35a600785d6297738749336061ecb2221)
 
 FetchContent_Declare(
   googletest
@@ -39,7 +39,8 @@ add_subdirectory(audio)
 add_subdirectory(gui)
 
 add_executable(main main.cc)
-target_link_libraries(main PRIVATE Qt6::Widgets main_window)
+target_link_libraries(main PUBLIC Qt6::Widgets main_window absl::log_initialize
+                                  absl::log_globals)
 
 add_custom_target(
   format_cc
