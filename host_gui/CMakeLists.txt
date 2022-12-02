@@ -27,7 +27,17 @@ FetchContent_Declare(
 
 FetchContent_Declare(fftw3 URL "https://www.fftw.org/fftw-3.3.10.tar.gz")
 
-FetchContent_MakeAvailable(absl googletest fftw3)
+FetchContent_Declare(
+  eigen
+  GIT_REPOSITORY https://gitlab.com/libeigen/eigen.git
+  GIT_TAG 3.4)
+
+# Using MakeAvailable causes many expensive Eigen tests to be enabled. Eigen is
+# header-only, so we don't need to fully build it.
+FetchContent_Populate(eigen)
+set(EIGEN_SOURCE_DIR ${eigen_SOURCE_DIR})
+
+FetchContent_MakeAvailable(absl fftw3 googletest)
 include(GoogleTest)
 enable_testing()
 find_package(Qt6 REQUIRED COMPONENTS Widgets)
@@ -36,6 +46,7 @@ include_directories(.)
 
 add_subdirectory(diy)
 add_subdirectory(audio)
+add_subdirectory(image)
 add_subdirectory(gui)
 
 add_executable(main main.cc)
