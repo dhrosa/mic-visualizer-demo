@@ -65,9 +65,8 @@ MainWindow::Impl::~Impl() {
 }
 
 void MainWindow::Impl::initViewer() {
-  auto scoped_viewer = std::make_unique<ImageViewer>();
-  viewer = scoped_viewer.get();
-  window->setCentralWidget(std::move(scoped_viewer).release());
+  viewer = new ImageViewer();
+  window->setCentralWidget(viewer);
 }
 
 void MainWindow::Impl::initToolBar() {
