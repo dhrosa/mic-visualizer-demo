@@ -30,8 +30,7 @@ void MapColors(const ColorMap& cmap, QImage& image) {
 }
 }  // namespace
 
-namespace main_window_internal {
-struct Impl {
+struct MainWindow::Impl {
   Impl(MainWindow* window);
   ~Impl();
 
@@ -52,7 +51,7 @@ struct Impl {
   absl::Notification stopping;
 };
 
-Impl::Impl(MainWindow* window) : window(window) {
+MainWindow::Impl::Impl(MainWindow* window) : window(window) {
   initViewer();
   initToolBar();
   initStatusBar();
@@ -60,18 +59,18 @@ Impl::Impl(MainWindow* window) : window(window) {
   initUpdateThread();
 }
 
-Impl::~Impl() {
+MainWindow::Impl::~Impl() {
   stopping.Notify();
   update_thread.join();
 }
 
-void Impl::initViewer() {
+void MainWindow::Impl::initViewer() {
   auto scoped_viewer = std::make_unique<ImageViewer>();
   viewer = scoped_viewer.get();
   window->setCentralWidget(std::move(scoped_viewer).release());
 }
 
-void Impl::initToolBar() {
+void MainWindow::Impl::initToolBar() {
   QToolBar& tool_bar = *window->addToolBar("Tool Bar");
   tool_bar.setFloatable(false);
 
@@ -86,7 +85,7 @@ void Impl::initToolBar() {
                    window, set_colormap);
 }
 
-void Impl::initStatusBar() {
+void MainWindow::Impl::initStatusBar() {
   QStatusBar* status_bar = window->statusBar();
   auto* frequency_label = new QLabel();
   QFont font = frequency_label->font();
@@ -97,34 +96,31 @@ void Impl::initStatusBar() {
   status_bar->addPermanentWidget(frequency_label);
 }
 
-void Impl::initShortcuts() {
+void MainWindow::Impl::initShortcuts() {
   new QShortcut(QKeySequence::Close, window, [&] { window->close(); });
   new QShortcut(QKeySequence::Quit, window, [&] { window->close(); });
 }
 
-void Impl::initUpdateThread() {
+void MainWindow::Impl::initUpdateThread() {
   update_thread = std::thread([this] { UpdateLoop(); });
 }
 
-void Impl::SetColormap(int index) {
+void MainWindow::Impl::SetColormap(int index) {
   active_colormap = &colormaps()[index];
   Render();
 }
 
-void Impl::Render() {
+void MainWindow::Impl::Render() {
   viewer->UpdateImage(
       [&](QImage& image) { MapColors(*active_colormap, image); });
 }
 
-void Impl::UpdateLoop() {
+void MainWindow::Impl::UpdateLoop() {
   while (!stopping.HasBeenNotified()) {
     absl::SleepFor(absl::Seconds(1));
     LOG(INFO) << "sup world";
   }
 }
 
-}  // namespace main_window_internal
-
-MainWindow::MainWindow()
-    : impl_(std::make_unique<main_window_internal::Impl>(this)) {}
+MainWindow::MainWindow() : impl_(std::make_unique<Impl>(this)) {}
 MainWindow::~MainWindow() {}
