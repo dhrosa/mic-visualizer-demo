@@ -11,10 +11,12 @@
 #include <QtWidgets>
 
 #include "audio/source.h"
+#include "audio/spectrum.h"
 #include "colormap_picker.h"
 #include "colormaps.h"
 #include "diy/buffer.h"
 #include "diy/generator.h"
+#include "image/circular_buffer.h"
 #include "image_viewer.h"
 
 namespace {
@@ -46,12 +48,15 @@ struct MainWindow::Impl {
 
   MainWindow* window;
   ImageViewer* viewer;
+
+  CircularBuffer<double> data;
+
   const ColorMap* active_colormap = &colormaps()[0];
   std::thread update_thread;
   absl::Notification stopping;
 };
 
-MainWindow::Impl::Impl(MainWindow* window) : window(window) {
+MainWindow::Impl::Impl(MainWindow* window) : window(window), data(1920, 1080) {
   initViewer();
   initToolBar();
   initStatusBar();
@@ -115,9 +120,14 @@ void MainWindow::Impl::Render() {
 }
 
 void MainWindow::Impl::UpdateLoop() {
-  while (!stopping.HasBeenNotified()) {
-    absl::SleepFor(absl::Seconds(1));
-    LOG(INFO) << "sup world";
+  const double sample_rate = 24'000;
+  const std::size_t window_size = 2048;
+  auto spectra = PowerSpectrum(sample_rate, window_size,
+                               SimulatedSource(absl::Milliseconds(10)));
+  for (auto&& spectrum : std::move(spectra)) {
+    if (stopping.HasBeenNotified()) {
+      return;
+    }
   }
 }
 

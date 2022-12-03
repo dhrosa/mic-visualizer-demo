@@ -36,7 +36,8 @@ TEST(SimulatedSourceTest, SourceFirstSamplesMatch) {
 TEST(SimulatedSourceTest, SourceLastSamplesMatch) {
   const std::span<const std::int16_t> samples = SimulatedSamples();
 
-  auto source = SimulatedSource(absl::Seconds(4));
+  auto source =
+      SimulatedSource(absl::Seconds(4), SimulatedSourcePacing::kInstant);
 
   EXPECT_THAT(source(), SizeIs(96'000));
 

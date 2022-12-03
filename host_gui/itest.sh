@@ -1,3 +1,4 @@
-#! /bin/bash
+#!/ bin / bash
 
-find .. -type f | grep -v ../build/ | entr -r sh -c 'cmake --build . && ctest --output-on-failure'
+find..- type f | grep - v../ build / |
+    entr - r sh - c 'cmake --build . && ctest --output-on-failure'

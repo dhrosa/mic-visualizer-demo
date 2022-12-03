@@ -35,9 +35,13 @@ diy_cc_library(
             absl::synchronization
             absl::log
             absl::time
+            audio_source
+            audio_spectrum
+            buffer
             colormaps
             image_viewer
             colormap_picker
             generator
+            circular_buffer
             buffer)
 set_property(TARGET main_window PROPERTY AUTOMOC ON)
