@@ -1,12 +1,15 @@
 #include <QImage>
+#include <QSize>
 #include <QTransform>
 #include <QWidget>
 #include <mutex>
 
 class ImageViewer : public QWidget {
  public:
-  ImageViewer();
+  ImageViewer(std::size_t width, std::size_t height);
 
+  QSize sizeHint() const override { return maximumSize(); }
+  
   QTransform logicalToWidgetTransform() const;
   QTransform widgetToLogicalTransform() const;
 

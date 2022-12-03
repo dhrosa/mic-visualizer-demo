@@ -75,7 +75,7 @@ MainWindow::Impl::~Impl() {
 }
 
 void MainWindow::Impl::initViewer() {
-  viewer = new ImageViewer();
+  viewer = new ImageViewer(data.width(), data.height());
   window->setCentralWidget(viewer);
 }
 
