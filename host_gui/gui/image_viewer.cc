@@ -11,7 +11,8 @@
 
 #include "colormaps.h"
 
-ImageViewer::ImageViewer(std::size_t width, std::size_t height) : image_(width, height, QImage::Format_ARGB32) {
+ImageViewer::ImageViewer(std::size_t width, std::size_t height)
+    : image_(width, height, QImage::Format_ARGB32) {
   image_.fill(0);
 }
 

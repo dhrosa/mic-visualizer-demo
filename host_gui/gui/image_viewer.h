@@ -9,7 +9,7 @@ class ImageViewer : public QWidget {
   ImageViewer(std::size_t width, std::size_t height);
 
   QSize sizeHint() const override { return maximumSize(); }
-  
+
   QTransform logicalToWidgetTransform() const;
   QTransform widgetToLogicalTransform() const;
 

@@ -63,8 +63,7 @@ target_link_libraries(main PUBLIC Qt6::Widgets main_window absl::log_initialize
 
 add_custom_target(
   format_cc
-  COMMAND find ${PROJECT_SOURCE_DIR} -type f | grep -v ${PROJECT_BINARY_DIR} |
-          grep -E "\.(cc|h)$" | xargs -L1 clang-format -i
+  COMMAND find ${PROJECT_SOURCE_DIR} -type f | grep -v ${PROJECT_BINARY_DIR} | grep -E "[.](h|cc)$" | xargs -L1 clang-format -i
   VERBATIM)
 add_custom_target(
   format_cmake
