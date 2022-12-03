@@ -37,8 +37,7 @@ diy_cc_library(
   HEADERS generator.h
   LIBRARIES absl::cleanup)
 
-diy_cc_test(generator_test SOURCES generator_test.cc)
-target_link_libraries(generator_test generator)
+diy_cc_test(generator_test SOURCES generator_test.cc LIBRARIES generator)
 
 diy_cc_library(
   buffer
