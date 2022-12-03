@@ -49,6 +49,10 @@ struct MainWindow::Impl {
   MainWindow* window;
   ImageViewer* viewer;
 
+  const double sample_rate = 24'000;
+  const std::size_t fft_window_size = 2048;
+  const std::vector<double> frequency_bins =
+      FrequencyBins(fft_window_size, sample_rate);
   CircularBuffer<double> data;
 
   const ColorMap* active_colormap = &colormaps()[0];
@@ -56,7 +60,8 @@ struct MainWindow::Impl {
   absl::Notification stopping;
 };
 
-MainWindow::Impl::Impl(MainWindow* window) : window(window), data(1920, 1080) {
+MainWindow::Impl::Impl(MainWindow* window)
+    : window(window), data(1600, frequency_bins.size()) {
   initViewer();
   initToolBar();
   initStatusBar();
@@ -120,14 +125,13 @@ void MainWindow::Impl::Render() {
 }
 
 void MainWindow::Impl::UpdateLoop() {
-  const double sample_rate = 24'000;
-  const std::size_t window_size = 2048;
-  auto spectra = PowerSpectrum(sample_rate, window_size,
+  auto spectra = PowerSpectrum(sample_rate, fft_window_size,
                                SimulatedSource(absl::Milliseconds(10)));
   for (auto&& spectrum : std::move(spectra)) {
     if (stopping.HasBeenNotified()) {
       return;
     }
+    data.AppendColumn(spectrum);
   }
 }
 
