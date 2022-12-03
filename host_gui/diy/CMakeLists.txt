@@ -3,7 +3,7 @@ project(diy C CXX)
 
 add_library(test_main STATIC test_main.cc)
 target_link_libraries(test_main gtest absl::failure_signal_handler)
-function(diy_add_test name)
+function(diy_cc_test name)
   set(options "")
   set(single_value_args "")
   set(multi_value_args SOURCES LIBRARIES)
@@ -37,14 +37,14 @@ diy_cc_library(
   HEADERS generator.h
   LIBRARIES absl::cleanup)
 
-diy_add_test(generator_test SOURCES generator_test.cc)
+diy_cc_test(generator_test SOURCES generator_test.cc)
 target_link_libraries(generator_test generator)
 
 diy_cc_library(
   buffer
   HEADERS buffer.h
   LIBRARIES absl::any_invocable)
-diy_add_test(
+diy_cc_test(
   buffer_test
   SOURCES buffer_test.cc
   LIBRARIES buffer)

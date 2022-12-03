@@ -1,5 +1,5 @@
 additional_commands:
-  diy_add_test:
+  diy_cc_test:
     pargs:
       nargs: 1
     kwargs:
