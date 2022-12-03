@@ -10,6 +10,14 @@ add_compile_options(-O0 -g3)
 set(cxx_flags -ftemplate-backtrace-limit=0 -fconcepts-diagnostics-depth=10)
 add_compile_options("$<$<COMPILE_LANGUAGE:CXX>:${cxx_flags}>")
 
+find_program(CCACHE_PROGRAM ccache)
+if(CCACHE_PROGRAM)
+  set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE "${CCACHE_PROGRAM}")
+  message(STATUS "Using ccache found at ${CCACHE_PROGRAM}")
+else()
+  message(STATUS "ccache not found.")
+endif()
+
 project(host_gui C CXX)
 
 include(FetchContent)
