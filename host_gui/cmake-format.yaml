@@ -17,4 +17,11 @@ additional_commands:
       HEADERS: +
       SOURCES: +
       LIBRARIES: +
-  
+  diy_cc_binary:
+    pargs:
+      nargs: 1
+      flags:
+      - AUTO
+    kwargs:
+      SOURCES: +
+      LIBRARIES: +

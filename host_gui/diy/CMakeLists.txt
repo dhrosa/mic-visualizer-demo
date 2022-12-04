@@ -47,6 +47,19 @@ function(diy_cc_library name)
   target_link_libraries(${name} ${_LIBRARIES})
 endfunction()
 
+function(diy_cc_binary name)
+  set(options AUTO)
+  set(single_value_args "")
+  set(multi_value_args HEADERS SOURCES LIBRARIES)
+  cmake_parse_arguments("" "${options}" "${single_value_args}"
+                        "${multi_value_args}" ${ARGN})
+  if(_AUTO)
+    list(APPEND _SOURCES "${name}.cc")
+  endif()
+  add_executable(${name} ${_SOURCES})
+  target_link_libraries(${name} PUBLIC ${_LIBRARIES})
+endfunction()
+
 diy_cc_library(generator AUTO LIBRARIES absl::cleanup)
 diy_cc_test(generator_test AUTO)
 

@@ -45,7 +45,6 @@ FetchContent_Declare(
 FetchContent_Populate(eigen)
 add_library(eigen INTERFACE)
 target_include_directories(eigen INTERFACE ${eigen_SOURCE_DIR})
-set(EIGEN_SOURCE_DIR ${eigen_SOURCE_DIR})
 
 FetchContent_MakeAvailable(absl fftw3 googletest)
 include(GoogleTest)
@@ -59,8 +58,7 @@ add_subdirectory(audio)
 add_subdirectory(image)
 add_subdirectory(gui)
 
-add_executable(main main.cc)
-target_link_libraries(main PUBLIC Qt6::Widgets main_window absl::log_initialize
+diy_cc_binary(main AUTO LIBRARIES Qt6::Widgets main_window absl::log_initialize
                                   absl::log_globals)
 
 add_custom_target(
