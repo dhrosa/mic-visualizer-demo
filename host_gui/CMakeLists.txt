@@ -43,6 +43,8 @@ FetchContent_Declare(
 # Using MakeAvailable causes many expensive Eigen tests to be enabled. Eigen is
 # header-only, so we don't need to fully build it.
 FetchContent_Populate(eigen)
+add_library(eigen INTERFACE)
+target_include_directories(eigen INTERFACE ${eigen_SOURCE_DIR})
 set(EIGEN_SOURCE_DIR ${eigen_SOURCE_DIR})
 
 FetchContent_MakeAvailable(absl fftw3 googletest)
