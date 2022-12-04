@@ -17,26 +17,20 @@ set_source_files_properties(cardinal.o PROPERTIES EXTERNAL_OBJECT true GENERATED
 set_target_properties(cardinal PROPERTIES LINKER_LANGUAGE C)
 
 diy_cc_library(
-  audio_source
+  source
   HEADERS source.h
   SOURCES source.cc
   LIBRARIES cardinal generator buffer absl::time)
 
-diy_cc_test(
-  audio_source_test
-  SOURCES source_test.cc
-  LIBRARIES audio_source)
+diy_cc_test(source_test AUTO)
 
 diy_cc_library(
-  audio_spectrum
+  spectrum
   HEADERS spectrum.h
   SOURCES spectrum.cc
   LIBRARIES fftw3 generator buffer)
 # For some reason the fftw3 library itself doesn't automatically add the right
 # include directories?
-target_include_directories(audio_spectrum PRIVATE ${fftw3_SOURCE_DIR}/api)
+target_include_directories(spectrum PRIVATE ${fftw3_SOURCE_DIR}/api)
 
-diy_cc_test(
-  audio_spectrum_test
-  SOURCES spectrum_test.cc
-  LIBRARIES audio_spectrum)
+diy_cc_test(spectrum_test AUTO)

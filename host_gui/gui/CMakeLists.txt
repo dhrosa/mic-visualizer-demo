@@ -35,9 +35,8 @@ diy_cc_library(
             absl::synchronization
             absl::log
             absl::time
-            audio_source
-            audio_spectrum
-            buffer
+            source
+            spectrum
             colormaps
             image_viewer
             colormap_picker

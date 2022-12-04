@@ -3,12 +3,20 @@ project(diy C CXX)
 
 add_library(test_main STATIC test_main.cc)
 target_link_libraries(test_main gtest absl::failure_signal_handler)
+
 function(diy_cc_test name)
-  set(options "")
+  set(options "AUTO")
   set(single_value_args "")
   set(multi_value_args SOURCES LIBRARIES)
   cmake_parse_arguments("" "${options}" "${single_value_args}"
                         "${multi_value_args}" ${ARGN})
+
+  if(_AUTO)
+    set(_SOURCES "${name}.cc")
+    string(REPLACE "_test" "" auto_library_name ${name})
+    list(PREPEND _LIBRARIES ${auto_library_name})
+  endif()
+
   add_executable(${name} "${_SOURCES}")
   target_link_libraries(${name} gmock gtest test_main "${_LIBRARIES}")
   gtest_discover_tests(${name} DISCOVERY_MODE PRE_TEST)
@@ -37,16 +45,10 @@ diy_cc_library(
   HEADERS generator.h
   LIBRARIES absl::cleanup)
 
-diy_cc_test(
-  generator_test
-  SOURCES generator_test.cc
-  LIBRARIES generator)
+diy_cc_test(generator_test AUTO)
 
 diy_cc_library(
   buffer
   HEADERS buffer.h
   LIBRARIES absl::any_invocable)
-diy_cc_test(
-  buffer_test
-  SOURCES buffer_test.cc
-  LIBRARIES buffer)
+diy_cc_test(buffer_test AUTO)
