@@ -15,7 +15,7 @@ void LutMap(const Source& source, Dest& dest,
   auto clamped = source.max(min).min(max);
   auto shifted = clamped - min;
   auto scaled = (shifted / (max - min)) * 255;
-  auto indexes = scaled.template cast<std::uint8_t>().eval();
+  auto indexes = scaled.round().template cast<std::uint8_t>().eval();
   for (std::size_t row = 0; row < source.rows(); ++row) {
     dest.row(row) = lut(indexes.row(row));
   }

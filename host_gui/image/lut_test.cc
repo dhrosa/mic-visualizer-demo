@@ -51,5 +51,5 @@ TEST(LutTest, LinearMapping) {
   Array<std::uint32_t, Dynamic, Dynamic> dest(2, 3);
   LutMap(source, dest, LinearLut(1000), 1, 2);
 
-  EXPECT_THAT(dest, ArrayElementsAre({{1000, 1000, 1063}, {1127, 1255, 1255}}));
+  EXPECT_THAT(dest, ArrayElementsAre({{1000, 1000, 1064}, {1128, 1255, 1255}}));
 }
