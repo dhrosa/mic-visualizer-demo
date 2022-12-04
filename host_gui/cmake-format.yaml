@@ -11,6 +11,7 @@ additional_commands:
     pargs:
       nargs: 1
       flags:
+      - AUTO
       - STATIC
     kwargs:
       HEADERS: +

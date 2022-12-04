@@ -16,19 +16,11 @@ set_source_files_properties(cardinal.o PROPERTIES EXTERNAL_OBJECT true GENERATED
                                                                        true)
 set_target_properties(cardinal PROPERTIES LINKER_LANGUAGE C)
 
-diy_cc_library(
-  source
-  HEADERS source.h
-  SOURCES source.cc
-  LIBRARIES cardinal generator buffer absl::time)
+diy_cc_library(source AUTO LIBRARIES cardinal generator buffer absl::time)
 
 diy_cc_test(source_test AUTO)
 
-diy_cc_library(
-  spectrum
-  HEADERS spectrum.h
-  SOURCES spectrum.cc
-  LIBRARIES fftw3 generator buffer)
+diy_cc_library(spectrum AUTO LIBRARIES fftw3 generator buffer)
 # For some reason the fftw3 library itself doesn't automatically add the right
 # include directories?
 target_include_directories(spectrum PRIVATE ${fftw3_SOURCE_DIR}/api)

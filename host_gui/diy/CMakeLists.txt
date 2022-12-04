@@ -23,13 +23,20 @@ function(diy_cc_test name)
 endfunction()
 
 function(diy_cc_library name)
-  set(options STATIC)
+  set(options AUTO STATIC)
   set(single_value_args "")
   set(multi_value_args HEADERS SOURCES LIBRARIES)
   cmake_parse_arguments("" "${options}" "${single_value_args}"
                         "${multi_value_args}" ${ARGN})
+  if(_AUTO)
+    list(APPEND _HEADERS "${name}.h")
+    set(source_file "${name}.cc")
+    if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${source_file}")
+      list(APPEND _SOURCES ${source_file})
+    endif()
+  endif()
   set(library_type "")
-  if(_SRCS STREQUAL "")
+  if(_SOURCES STREQUAL "")
     set(library_type INTERFACE)
   elseif(_STATIC)
     set(library_type STATIC)
@@ -40,15 +47,8 @@ function(diy_cc_library name)
   target_link_libraries(${name} ${_LIBRARIES})
 endfunction()
 
-diy_cc_library(
-  generator
-  HEADERS generator.h
-  LIBRARIES absl::cleanup)
-
+diy_cc_library(generator AUTO LIBRARIES absl::cleanup)
 diy_cc_test(generator_test AUTO)
 
-diy_cc_library(
-  buffer
-  HEADERS buffer.h
-  LIBRARIES absl::any_invocable)
+diy_cc_library(buffer AUTO LIBRARIES absl::any_invocable)
 diy_cc_test(buffer_test AUTO)
