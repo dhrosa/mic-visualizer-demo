@@ -5,7 +5,7 @@
 #include <span>
 
 template <typename Source, typename Dest>
-void LutMap(const Source& source, Dest& dest,
+void LutMap(Source&& source, Dest&& dest,
             std::span<const std::uint32_t, 256> lut_entries, double min,
             double max) {
   using namespace Eigen;
@@ -16,7 +16,6 @@ void LutMap(const Source& source, Dest& dest,
   auto shifted = clamped - min;
   auto scaled = (shifted / (max - min)) * 255;
   auto indexes = scaled.round().template cast<std::uint8_t>().eval();
-#pragma omp parallel for
   for (std::size_t row = 0; row < source.rows(); ++row) {
     dest.row(row) = lut(indexes.row(row));
   }

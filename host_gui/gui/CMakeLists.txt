@@ -42,5 +42,6 @@ diy_cc_library(
             colormap_picker
             generator
             circular_buffer
+            qimage_eigen
             buffer)
 set_property(TARGET main_window PROPERTY AUTOMOC ON)

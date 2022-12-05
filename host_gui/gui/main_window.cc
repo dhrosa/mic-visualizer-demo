@@ -17,20 +17,9 @@
 #include "diy/buffer.h"
 #include "diy/generator.h"
 #include "image/circular_buffer.h"
+#include "image/lut.h"
+#include "image/qimage_eigen.h"
 #include "image_viewer.h"
-
-namespace {
-void MapColors(const ColorMap& cmap, QImage& image) {
-  const int h = image.height();
-  const int w = image.width();
-  for (int r = 0; r < h; ++r) {
-    auto* row = reinterpret_cast<std::uint32_t*>(image.scanLine(r));
-    for (int c = 0; c < w; ++c) {
-      row[c] = cmap.entries[(r * w + c) % 256];
-    }
-  }
-}
-}  // namespace
 
 struct MainWindow::Impl {
   Impl(MainWindow* window);
@@ -54,6 +43,8 @@ struct MainWindow::Impl {
   const std::vector<double> frequency_bins =
       FrequencyBins(fft_window_size, sample_rate);
   CircularBuffer<double> data;
+  double min_value;
+  double max_value;
 
   const ColorMap* active_colormap = &colormaps()[0];
   std::thread update_thread;
@@ -61,7 +52,7 @@ struct MainWindow::Impl {
 };
 
 MainWindow::Impl::Impl(MainWindow* window)
-    : window(window), data(1600, frequency_bins.size()) {
+    : window(window), data(200, frequency_bins.size()) {
   initViewer();
   initToolBar();
   initStatusBar();
@@ -120,8 +111,16 @@ void MainWindow::Impl::SetColormap(int index) {
 }
 
 void MainWindow::Impl::Render() {
-  viewer->UpdateImage(
-      [&](QImage& image) { MapColors(*active_colormap, image); });
+  viewer->UpdateImage([&](QImage& image) {
+    auto lut = active_colormap->entries;
+    auto dest = EigenView(image);
+
+    auto newer = data.Newer();
+    auto older = data.Older();
+
+    LutMap(newer, dest.rightCols(newer.cols()), lut, min_value, max_value);
+    LutMap(older, dest.leftCols(older.cols()), lut, min_value, max_value);
+  });
 }
 
 void MainWindow::Impl::UpdateLoop() {
@@ -131,7 +130,13 @@ void MainWindow::Impl::UpdateLoop() {
     if (stopping.HasBeenNotified()) {
       return;
     }
+    std::ranges::for_each(spectrum, [&](auto& v) {
+      v = std::log2(v + 1);
+      min_value = std::min(v, min_value);
+      max_value = std::max(v, max_value);
+    });
     data.AppendColumn(spectrum);
+    Render();
   }
 }
 
