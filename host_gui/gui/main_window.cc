@@ -16,6 +16,7 @@
 #include "colormaps.h"
 #include "diy/buffer.h"
 #include "diy/generator.h"
+#include "diy/latency_logger.h"
 #include "image/circular_buffer.h"
 #include "image/lut.h"
 #include "image/qimage_eigen.h"
@@ -127,6 +128,7 @@ void MainWindow::Impl::UpdateLoop() {
   auto spectra = PowerSpectrum(sample_rate, fft_window_size,
                                SimulatedSource(absl::Milliseconds(10)));
   for (auto&& spectrum : std::move(spectra)) {
+    LatencyLogger logger("UpdateLoop");
     if (stopping.HasBeenNotified()) {
       return;
     }

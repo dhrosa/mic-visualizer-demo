@@ -5,7 +5,7 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 # Flags shared between C and C++ targets
-add_compile_options(-O1 -g3)
+add_compile_options(-O1 -g3 -march=native)
 # Flags only for C++ targets
 set(cxx_flags -ftemplate-backtrace-limit=0 -fconcepts-diagnostics-depth=10)
 add_compile_options("$<$<COMPILE_LANGUAGE:CXX>:${cxx_flags}>")

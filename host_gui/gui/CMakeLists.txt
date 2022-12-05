@@ -41,6 +41,7 @@ diy_cc_library(
             image_viewer
             colormap_picker
             generator
+            latency_logger
             circular_buffer
             qimage_eigen
             buffer)

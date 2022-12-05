@@ -65,3 +65,5 @@ diy_cc_test(generator_test AUTO)
 
 diy_cc_library(buffer AUTO LIBRARIES absl::any_invocable)
 diy_cc_test(buffer_test AUTO)
+
+diy_cc_library(latency_logger AUTO LIBRARIES absl::log absl::time)
