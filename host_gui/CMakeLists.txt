@@ -56,7 +56,6 @@ FetchContent_MakeAvailable(absl benchmark fftw3 googletest)
 include(GoogleTest)
 enable_testing()
 find_package(Qt6 REQUIRED COMPONENTS Widgets)
-find_package(OpenMP)
 
 include_directories(.)
 
