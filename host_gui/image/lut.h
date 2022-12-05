@@ -16,6 +16,7 @@ void LutMap(const Source& source, Dest& dest,
   auto shifted = clamped - min;
   auto scaled = (shifted / (max - min)) * 255;
   auto indexes = scaled.round().template cast<std::uint8_t>().eval();
+#pragma omp parallel for
   for (std::size_t row = 0; row < source.rows(); ++row) {
     dest.row(row) = lut(indexes.row(row));
   }

@@ -7,7 +7,7 @@ diy_cc_test(circular_buffer_test AUTO)
 diy_cc_library(qimage_eigen AUTO LIBRARIES Qt6::Gui eigen)
 diy_cc_test(qimage_eigen_test AUTO LIBRARIES Qt6::Gui)
 
-diy_cc_library(lut AUTO LIBRARIES eigen)
+diy_cc_library(lut AUTO STATIC LIBRARIES eigen OpenMP::OpenMP_CXX)
 diy_cc_test(lut_test AUTO eigen)
 
 diy_cc_binary(
