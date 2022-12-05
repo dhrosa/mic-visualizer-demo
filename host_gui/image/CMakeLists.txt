@@ -9,3 +9,7 @@ diy_cc_test(qimage_eigen_test AUTO LIBRARIES Qt6::Gui)
 
 diy_cc_library(lut AUTO LIBRARIES eigen)
 diy_cc_test(lut_test AUTO eigen)
+
+diy_cc_binary(
+  lut_benchmark AUTO LIBRARIES lut Qt6::Gui eigen benchmark::benchmark
+                               benchmark::benchmark_main)

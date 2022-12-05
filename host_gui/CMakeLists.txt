@@ -29,6 +29,12 @@ FetchContent_Declare(
   GIT_TAG 296abbd35a600785d6297738749336061ecb2221)
 
 FetchContent_Declare(
+  benchmark
+  GIT_REPOSITORY "https://github.com/google/benchmark.git"
+  GIT_TAG v1.7.1)
+
+set(BENCHMARK_ENABLE_TESTING OFF)
+FetchContent_Declare(
   googletest
   GIT_REPOSITORY https://github.com/google/googletest.git
   GIT_TAG release-1.12.1)
@@ -46,7 +52,7 @@ FetchContent_Populate(eigen)
 add_library(eigen INTERFACE)
 target_include_directories(eigen INTERFACE ${eigen_SOURCE_DIR})
 
-FetchContent_MakeAvailable(absl fftw3 googletest)
+FetchContent_MakeAvailable(absl benchmark fftw3 googletest)
 include(GoogleTest)
 enable_testing()
 find_package(Qt6 REQUIRED COMPONENTS Widgets)
