@@ -30,7 +30,6 @@ struct MainWindow::Impl {
   void initToolBar();
   void initStatusBar();
   void initShortcuts();
-  void initUpdateThread();
 
   void SetColormap(int index);
   void Render();
@@ -48,7 +47,7 @@ struct MainWindow::Impl {
   double max_value;
 
   const ColorMap* active_colormap = &colormaps()[0];
-  std::thread update_thread;
+  std::vector<std::thread> threads;
   absl::Notification stopping;
 };
 
@@ -58,12 +57,15 @@ MainWindow::Impl::Impl(MainWindow* window)
   initToolBar();
   initStatusBar();
   initShortcuts();
-  initUpdateThread();
+
+  threads.emplace_back([this] { UpdateLoop(); });
 }
 
 MainWindow::Impl::~Impl() {
   stopping.Notify();
-  update_thread.join();
+  for (std::thread& thread : threads) {
+    thread.join();
+  }
 }
 
 void MainWindow::Impl::initViewer() {
@@ -100,10 +102,6 @@ void MainWindow::Impl::initStatusBar() {
 void MainWindow::Impl::initShortcuts() {
   new QShortcut(QKeySequence::Close, window, [&] { window->close(); });
   new QShortcut(QKeySequence::Quit, window, [&] { window->close(); });
-}
-
-void MainWindow::Impl::initUpdateThread() {
-  update_thread = std::thread([this] { UpdateLoop(); });
 }
 
 void MainWindow::Impl::SetColormap(int index) {
