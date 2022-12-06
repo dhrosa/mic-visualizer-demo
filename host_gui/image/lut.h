@@ -4,12 +4,13 @@
 #include <iostream>
 #include <span>
 
-void LutMapRow(auto&& source, auto&& dest, auto&& lut, double min, double max);
+template <typename Scalar>
+void LutMapRow(auto&& source, auto&& dest, auto&& lut, Scalar min, Scalar max);
 
-template <typename Source, typename Dest>
+template <typename Scalar, typename Source, typename Dest>
 void LutMap(Source&& source, Dest&& dest,
-            std::span<const std::uint32_t, 256> lut_entries, double min,
-            double max) {
+            std::span<const std::uint32_t, 256> lut_entries, Scalar min,
+            Scalar max) {
   using namespace Eigen;
   auto lut = Map<const Array<std::uint32_t, 256, 1>>(lut_entries.data());
   const std::size_t rows = source.rows();
@@ -19,9 +20,10 @@ void LutMap(Source&& source, Dest&& dest,
   }
 }
 
-void LutMapRow(auto&& source, auto&& dest, auto&& lut, double min, double max) {
+template <typename Scalar>
+void LutMapRow(auto&& source, auto&& dest, auto&& lut, Scalar min, Scalar max) {
   // Scales from range [0, (max-min)] to range [0, 255]
-  const double scale_factor = 255.0 / (max - min);
+  const Scalar scale_factor = 255.0 / (max - min);
 
   // Clamp input to range [min, max].
   auto clamped = source.max(min).min(max);

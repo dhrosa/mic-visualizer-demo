@@ -39,7 +39,7 @@ TEST(LutTest, ConstantLut) {
   using namespace Eigen;
   const Array<double, Dynamic, Dynamic> source({{1, 2, 3}, {4, 5, 6}});
   Array<std::uint32_t, Dynamic, Dynamic> dest(2, 3);
-  LutMap(source, dest, ConstantLut(23), 0, 1);
+  LutMap(source, dest, ConstantLut(23), 0.0, 1.0);
 
   EXPECT_THAT(dest, ArrayElementsAre({{23, 23, 23}, {23, 23, 23}}));
 }
@@ -49,7 +49,7 @@ TEST(LutTest, LinearMapping) {
   const Array<double, Dynamic, Dynamic> source(
       {{0.75, 1.0, 1.25}, {1.5, 2.0, 2.5}});
   Array<std::uint32_t, Dynamic, Dynamic> dest(2, 3);
-  LutMap(source, dest, LinearLut(1000), 1, 2);
+  LutMap(source, dest, LinearLut(1000), 1.0, 2.0);
 
   EXPECT_THAT(dest, ArrayElementsAre({{1000, 1000, 1064}, {1128, 1255, 1255}}));
 }
