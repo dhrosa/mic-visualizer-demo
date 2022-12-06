@@ -12,8 +12,8 @@
 #include "colormaps.h"
 
 ImageViewer::ImageViewer(std::size_t width, std::size_t height)
-    : image_(width, height, QImage::Format_ARGB32) {
-  image_.fill(0);
+    : image_(width, height, QImage::Format_RGB32) {
+  image_.fill(0xFF'00'00'00);
 }
 
 QTransform ImageViewer::logicalToWidgetTransform() const {

@@ -7,6 +7,7 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 # Flags shared between C and C++ targets
 add_compile_options(-O1 -g3 -march=native)
 # Flags only for C++ targets
+# TODO(dhrosa): These flags are GCC-only. Use a generator expression.
 set(cxx_flags -ftemplate-backtrace-limit=0 -fconcepts-diagnostics-depth=10)
 add_compile_options("$<$<COMPILE_LANGUAGE:CXX>:${cxx_flags}>")
 
@@ -56,6 +57,7 @@ FetchContent_MakeAvailable(absl benchmark fftw3 googletest)
 include(GoogleTest)
 enable_testing()
 find_package(Qt6 REQUIRED COMPONENTS Widgets)
+find_package(OpenMP REQUIRED)
 
 include_directories(.)
 

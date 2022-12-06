@@ -19,7 +19,8 @@ static void BM_Lut(benchmark::State& state) {
   std::ranges::generate(lut, [&] { return distribution(rng); });
 
   auto source = Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic>::Random(
-      height, width);
+                    height, width)
+                    .eval();
   auto dest = EigenView(image);
   for (auto _ : state) {
     LutMap(source, dest, lut, -0.5, 0.5);
