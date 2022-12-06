@@ -1,7 +1,7 @@
 #include "main_window.h"
 
 #include <absl/log/log.h>
-#include <absl/synchronization/notification.h>
+#include <absl/synchronization/mutex.h>
 #include <absl/time/clock.h>
 #include <absl/time/time.h>
 
@@ -34,6 +34,10 @@ struct MainWindow::Impl {
   void SetColormap(int index);
   void Render();
   void UpdateLoop();
+  void RenderLoop();
+
+  absl::Mutex mutex;
+  bool stopping ABSL_GUARDED_BY(mutex) = false;
 
   MainWindow* window;
   ImageViewer* viewer;
@@ -42,13 +46,13 @@ struct MainWindow::Impl {
   const std::size_t fft_window_size = 2048;
   const std::vector<double> frequency_bins =
       FrequencyBins(fft_window_size, sample_rate);
-  CircularBuffer<double> data;
-  double min_value;
-  double max_value;
+
+  CircularBuffer<double> data ABSL_GUARDED_BY(mutex);
+  double min_value ABSL_GUARDED_BY(mutex);
+  double max_value ABSL_GUARDED_BY(mutex);
 
   const ColorMap* active_colormap = &colormaps()[0];
   std::vector<std::thread> threads;
-  absl::Notification stopping;
 };
 
 MainWindow::Impl::Impl(MainWindow* window)
@@ -59,10 +63,14 @@ MainWindow::Impl::Impl(MainWindow* window)
   initShortcuts();
 
   threads.emplace_back([this] { UpdateLoop(); });
+  threads.emplace_back([this] { RenderLoop(); });
 }
 
 MainWindow::Impl::~Impl() {
-  stopping.Notify();
+  {
+    absl::MutexLock lock(&mutex);
+    stopping = true;
+  }
   for (std::thread& thread : threads) {
     thread.join();
   }
@@ -127,8 +135,11 @@ void MainWindow::Impl::UpdateLoop() {
                                SimulatedSource(absl::Milliseconds(10)));
   for (auto&& spectrum : std::move(spectra)) {
     LatencyLogger logger("UpdateLoop");
-    if (stopping.HasBeenNotified()) {
-      return;
+    {
+      absl::MutexLock lock(&mutex);
+      if (stopping) {
+        return;
+      }
     }
     std::ranges::for_each(spectrum, [&](auto& v) {
       v = std::log2(v + 1);
@@ -139,6 +150,8 @@ void MainWindow::Impl::UpdateLoop() {
     Render();
   }
 }
+
+void MainWindow::Impl::RenderLoop() {}
 
 MainWindow::MainWindow() : impl_(std::make_unique<Impl>(this)) {}
 MainWindow::~MainWindow() {}
