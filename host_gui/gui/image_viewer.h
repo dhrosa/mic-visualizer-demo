@@ -1,8 +1,10 @@
+#include <absl/functional/function_ref.h>
+#include <absl/synchronization/mutex.h>
+
 #include <QImage>
 #include <QSize>
 #include <QTransform>
 #include <QWidget>
-#include <mutex>
 
 #include "cursor.h"
 
@@ -16,8 +18,7 @@ class ImageViewer : public QWidget {
   QTransform logicalToWidgetTransform() const;
   QTransform widgetToLogicalTransform() const;
 
-  template <typename F>
-  void UpdateImage(F&& f);
+  void UpdateImage(absl::FunctionRef<void(QImage&)> f);
 
  signals:
   void binHovered(QPoint);
@@ -29,15 +30,6 @@ class ImageViewer : public QWidget {
 
  private:
   Cursor* const cursor_;
-  std::mutex image_mutex_;
-  QImage image_;
+  absl::Mutex mutex_;
+  QImage image_ ABSL_GUARDED_BY(mutex_);
 };
-
-template <typename F>
-void ImageViewer::UpdateImage(F&& f) {
-  {
-    auto lock = std::unique_lock(image_mutex_);
-    f(image_);
-  }
-  update();
-}

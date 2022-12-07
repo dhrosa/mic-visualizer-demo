@@ -27,6 +27,14 @@ QTransform ImageViewer::widgetToLogicalTransform() const {
                                static_cast<double>(image_.height()) / height());
 }
 
+void ImageViewer::UpdateImage(absl::FunctionRef<void(QImage&)> f) {
+  {
+    absl::MutexLock lock(&mutex_);
+    f(image_);
+  }
+  update();
+}
+
 void ImageViewer::enterEvent(QEnterEvent* event) {
   cursor_->show();
   cursor_->raise();
@@ -51,7 +59,7 @@ void ImageViewer::mouseMoveEvent(QMouseEvent* event) {
 void ImageViewer::paintEvent(QPaintEvent* event) {
   QPainter painter(this);
   const QRect dest_rect = event->rect();
-  auto lock = std::unique_lock(image_mutex_);
+  absl::MutexLock lock(&mutex_);
   const QRect source_rect =
       widgetToLogicalTransform().mapRect(QRectF(dest_rect)).toAlignedRect();
   painter.setWindow(image_.rect());
