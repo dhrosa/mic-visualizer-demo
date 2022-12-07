@@ -1,4 +1,4 @@
-#include <absl/functional/function_ref.h>
+#include <absl/functional/any_invocable.h>
 #include <absl/synchronization/mutex.h>
 
 #include <QImage>
@@ -11,14 +11,14 @@
 class ImageViewer : public QWidget {
   Q_OBJECT
  public:
-  ImageViewer(std::size_t width, std::size_t height);
+  ImageViewer(QSize image_size);
 
   QSize sizeHint() const override { return maximumSize(); }
 
   QTransform logicalToWidgetTransform() const;
   QTransform widgetToLogicalTransform() const;
 
-  void UpdateImage(absl::FunctionRef<void(QImage&)> f);
+  void UpdateImage(absl::AnyInvocable<void(QImage&) &&> f);
 
  signals:
   void binHovered(QPoint);

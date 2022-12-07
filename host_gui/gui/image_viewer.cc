@@ -11,8 +11,8 @@
 
 #include "colormaps.h"
 
-ImageViewer::ImageViewer(std::size_t width, std::size_t height)
-    : image_(width, height, QImage::Format_RGB32), cursor_(new Cursor(this)) {
+ImageViewer::ImageViewer(QSize image_size)
+    : image_(image_size, QImage::Format_RGB32), cursor_(new Cursor(this)) {
   image_.fill(0xFF'00'00'00);
   setMouseTracking(true);
 }
@@ -27,10 +27,10 @@ QTransform ImageViewer::widgetToLogicalTransform() const {
                                static_cast<double>(image_.height()) / height());
 }
 
-void ImageViewer::UpdateImage(absl::FunctionRef<void(QImage&)> f) {
+void ImageViewer::UpdateImage(absl::AnyInvocable<void(QImage&) &&> f) {
   {
     absl::MutexLock lock(&mutex_);
-    f(image_);
+    std::move(f)(image_);
   }
   update();
 }

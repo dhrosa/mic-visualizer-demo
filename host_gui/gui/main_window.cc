@@ -2,25 +2,16 @@
 
 #include <absl/log/log.h>
 #include <absl/synchronization/mutex.h>
-#include <absl/time/clock.h>
-#include <absl/time/time.h>
 
-#include <QDebug>
-#include <QtCore>
-#include <QtGui>
-#include <QtWidgets>
+#include <QLabel>
+#include <QShortcut>
+#include <QStatusBar>
+#include <QToolBar>
+#include <thread>
 
-#include "audio/source.h"
-#include "audio/spectrum.h"
 #include "colormap_picker.h"
-#include "colormaps.h"
-#include "diy/buffer.h"
-#include "diy/generator.h"
-#include "diy/latency_logger.h"
-#include "image/circular_buffer.h"
-#include "image/lut.h"
-#include "image/qimage_eigen.h"
 #include "image_viewer.h"
+#include "model.h"
 
 struct MainWindow::Impl {
   Impl(MainWindow* window);
@@ -31,10 +22,9 @@ struct MainWindow::Impl {
   void initStatusBar();
   void initShortcuts();
 
-  void SetColormap(int index);
-  void Render();
   void UpdateLoop();
-  void RenderLoop();
+
+  Model model;
 
   absl::Mutex mutex;
   bool stopping ABSL_GUARDED_BY(mutex) = false;
@@ -42,28 +32,16 @@ struct MainWindow::Impl {
   MainWindow* window;
   ImageViewer* viewer;
 
-  const double sample_rate = 24'000;
-  const std::size_t fft_window_size = 2048;
-  const std::vector<double> frequency_bins =
-      FrequencyBins(fft_window_size, sample_rate);
-
-  CircularBuffer<double> data ABSL_GUARDED_BY(mutex);
-  double min_value ABSL_GUARDED_BY(mutex);
-  double max_value ABSL_GUARDED_BY(mutex);
-
-  const ColorMap* active_colormap = &colormaps()[0];
   std::vector<std::thread> threads;
 };
 
-MainWindow::Impl::Impl(MainWindow* window)
-    : window(window), data(768, frequency_bins.size()) {
+MainWindow::Impl::Impl(MainWindow* window) : window(window) {
   initViewer();
   initToolBar();
   initStatusBar();
   initShortcuts();
 
   threads.emplace_back([this] { UpdateLoop(); });
-  threads.emplace_back([this] { RenderLoop(); });
 }
 
 MainWindow::Impl::~Impl() {
@@ -77,7 +55,7 @@ MainWindow::Impl::~Impl() {
 }
 
 void MainWindow::Impl::initViewer() {
-  viewer = new ImageViewer(data.width(), data.height());
+  viewer = new ImageViewer(model.imageSize());
   window->setCentralWidget(viewer);
 }
 
@@ -88,7 +66,9 @@ void MainWindow::Impl::initToolBar() {
   auto* colormap_picker = new ColormapPicker();
   tool_bar.addWidget(colormap_picker);
 
-  auto set_colormap = [this](auto&& x) { SetColormap(x); };
+  auto set_colormap = [this](auto&& x) {
+    LOG(INFO) << "Colormap switching not yet available.";
+  };
 
   QObject::connect(colormap_picker, &ColormapPicker::highlighted, window,
                    set_colormap);
@@ -112,46 +92,17 @@ void MainWindow::Impl::initShortcuts() {
   new QShortcut(QKeySequence::Quit, window, [&] { window->close(); });
 }
 
-void MainWindow::Impl::SetColormap(int index) {
-  active_colormap = &colormaps()[index];
-  Render();
-}
-
-void MainWindow::Impl::Render() {
-  viewer->UpdateImage([&](QImage& image) {
-    auto lut = active_colormap->entries;
-    auto dest = EigenView(image);
-
-    auto newer = data.Newer();
-    auto older = data.Older();
-
-    LutMap(newer, dest.rightCols(newer.cols()), lut, min_value, max_value);
-    LutMap(older, dest.leftCols(older.cols()), lut, min_value, max_value);
-  });
-}
-
 void MainWindow::Impl::UpdateLoop() {
-  auto spectra = PowerSpectrum(sample_rate, fft_window_size,
-                               SimulatedSource(absl::Milliseconds(10)));
-  for (auto&& spectrum : std::move(spectra)) {
-    LatencyLogger logger("UpdateLoop");
+  for (auto&& render : model.Run()) {
     {
       absl::MutexLock lock(&mutex);
       if (stopping) {
         return;
       }
     }
-    std::ranges::for_each(spectrum, [&](auto& v) {
-      v = std::log2(v + 1);
-      min_value = std::min(v, min_value);
-      max_value = std::max(v, max_value);
-    });
-    data.AppendColumn(spectrum);
-    Render();
+    viewer->UpdateImage(std::move(render));
   }
 }
-
-void MainWindow::Impl::RenderLoop() {}
 
 MainWindow::MainWindow() : impl_(std::make_unique<Impl>(this)) {}
 MainWindow::~MainWindow() {}

@@ -15,13 +15,14 @@ target_include_directories(colormaps PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
 diy_cc_library(cursor AUTO LIBRARIES Qt6::Widgets)
 
 diy_cc_library(
-  image_viewer AUTO LIBRARIES Qt6::Widgets cursor absl::function_ref
+  image_viewer AUTO LIBRARIES Qt6::Widgets cursor absl::any_invocable
                               absl::synchronization)
 set_property(TARGET image_viewer PROPERTY AUTOMOC ON)
 
 diy_cc_library(
   model AUTO
-  LIBRARIES generator
+  LIBRARIES absl::any_invocable
+            generator
             circular_buffer
             Qt6::Gui
             source
@@ -34,18 +35,5 @@ diy_cc_library(
 diy_cc_library(colormap_picker AUTO LIBRARIES Qt6::Widgets colormaps)
 
 diy_cc_library(
-  main_window AUTO
-  LIBRARIES Qt6::Widgets
-            absl::synchronization
-            absl::log
-            absl::time
-            source
-            spectrum
-            colormaps
-            image_viewer
-            colormap_picker
-            generator
-            latency_logger
-            circular_buffer
-            qimage_eigen
-            buffer)
+  main_window AUTO LIBRARIES Qt6::Widgets absl::synchronization absl::log model
+                             image_viewer colormap_picker)
