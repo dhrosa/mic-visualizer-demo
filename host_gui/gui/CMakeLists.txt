@@ -16,6 +16,8 @@ diy_cc_library(image_viewer AUTO LIBRARIES Qt6::Widgets colormaps)
 
 diy_cc_library(colormap_picker AUTO LIBRARIES Qt6::Widgets colormaps)
 
+diy_cc_library(cursor AUTO LIBRARIES Qt6::Widgets)
+
 diy_cc_library(
   main_window AUTO
   LIBRARIES Qt6::Widgets
