@@ -35,6 +35,11 @@ void ImageViewer::UpdateImage(absl::FunctionRef<void(QImage&)> f) {
   update();
 }
 
+void ImageViewer::moveEvent(QMoveEvent* event) {
+  update();
+  QWidget::moveEvent(event);
+}
+
 void ImageViewer::enterEvent(QEnterEvent* event) {
   cursor_->show();
   cursor_->raise();

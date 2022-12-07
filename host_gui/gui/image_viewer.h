@@ -24,6 +24,7 @@ class ImageViewer : public QWidget {
   void binHovered(QPoint);
 
  protected:
+  void moveEvent(QMoveEvent* event) override;
   void enterEvent(QEnterEvent* event) override;
   void mouseMoveEvent(QMouseEvent* event) override;
   void paintEvent(QPaintEvent* event) override;
