@@ -6,7 +6,7 @@ class Cursor : public QWidget {
  public:
   Cursor(QWidget* parent);
 
-  void setTarget(QPointF target);
+  void setTarget(QPointF target) { target_ = target; }
 
   void paintEvent(QPaintEvent* event) override;
 

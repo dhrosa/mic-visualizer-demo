@@ -12,11 +12,12 @@ diy_cc_library(colormaps AUTO SOURCES colormaps.gen.cc)
 target_include_directories(colormaps PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
                                              ${CMAKE_CURRENT_BINARY_DIR})
 
-diy_cc_library(image_viewer AUTO LIBRARIES Qt6::Widgets colormaps)
+diy_cc_library(cursor AUTO LIBRARIES Qt6::Widgets)
+
+diy_cc_library(image_viewer AUTO LIBRARIES Qt6::Widgets cursor)
+set_property(TARGET image_viewer PROPERTY AUTOMOC ON)
 
 diy_cc_library(colormap_picker AUTO LIBRARIES Qt6::Widgets colormaps)
-
-diy_cc_library(cursor AUTO LIBRARIES Qt6::Widgets)
 
 diy_cc_library(
   main_window AUTO
@@ -34,4 +35,3 @@ diy_cc_library(
             circular_buffer
             qimage_eigen
             buffer)
-set_property(TARGET main_window PROPERTY AUTOMOC ON)

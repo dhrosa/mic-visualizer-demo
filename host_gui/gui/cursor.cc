@@ -21,5 +21,5 @@ void Cursor::paintEvent(QPaintEvent* event) {
   // Horizontal
   painter.drawLine(QLineF(0, target_.y(), width(), target_.y()));
   // Vertical
-  painter.drawLine(QLineF(target_.x(), 0, target_.y(), height()));
+  painter.drawLine(QLineF(target_.x(), 0, target_.x(), height()));
 }

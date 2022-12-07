@@ -4,7 +4,10 @@
 #include <QWidget>
 #include <mutex>
 
+#include "cursor.h"
+
 class ImageViewer : public QWidget {
+  Q_OBJECT
  public:
   ImageViewer(std::size_t width, std::size_t height);
 
@@ -16,10 +19,16 @@ class ImageViewer : public QWidget {
   template <typename F>
   void UpdateImage(F&& f);
 
+ signals:
+  void binHovered(QPoint);
+
  protected:
+  void enterEvent(QEnterEvent* event) override;
+  void mouseMoveEvent(QMouseEvent* event) override;
   void paintEvent(QPaintEvent* event) override;
 
  private:
+  Cursor* const cursor_;
   std::mutex image_mutex_;
   QImage image_;
 };
