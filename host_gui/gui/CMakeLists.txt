@@ -8,29 +8,16 @@ add_custom_command(
   DEPENDS generate_colormaps.py
   VERBATIM)
 
-diy_cc_library(
-  colormaps
-  HEADERS colormaps.h
-  SOURCES colormaps.cc colormaps.gen.cc)
+diy_cc_library(colormaps AUTO SOURCES colormaps.gen.cc)
 target_include_directories(colormaps PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
                                              ${CMAKE_CURRENT_BINARY_DIR})
 
-diy_cc_library(
-  image_viewer
-  HEADERS image_viewer.h
-  SOURCES image_viewer.cc
-  LIBRARIES Qt6::Widgets colormaps)
+diy_cc_library(image_viewer AUTO LIBRARIES Qt6::Widgets colormaps)
+
+diy_cc_library(colormap_picker AUTO LIBRARIES Qt6::Widgets colormaps)
 
 diy_cc_library(
-  colormap_picker
-  HEADERS colormap_picker.h
-  SOURCES colormap_picker.cc
-  LIBRARIES Qt6::Widgets colormaps)
-
-diy_cc_library(
-  main_window
-  HEADERS main_window.h
-  SOURCES main_window.cc
+  main_window AUTO
   LIBRARIES Qt6::Widgets
             absl::synchronization
             absl::log
