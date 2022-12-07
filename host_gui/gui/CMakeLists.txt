@@ -19,6 +19,18 @@ diy_cc_library(
                               absl::synchronization)
 set_property(TARGET image_viewer PROPERTY AUTOMOC ON)
 
+diy_cc_library(
+  model AUTO
+  LIBRARIES generator
+            circular_buffer
+            Qt6::Gui
+            source
+            spectrum
+            colormaps
+            absl::time
+            qimage_eigen
+            lut)
+
 diy_cc_library(colormap_picker AUTO LIBRARIES Qt6::Widgets colormaps)
 
 diy_cc_library(
