@@ -52,11 +52,10 @@ void ImageViewer::mouseMoveEvent(QMouseEvent* event) {
   // Each image pixel is mapped to a rectangle identified by its top-left
   // corner (towards origin).
   const QPoint snapped_image_pos(image_pos.x(), image_pos.y());
+  const QRectF bin_rect(snapped_image_pos, QSize(1, 1));
   emit binHovered(snapped_image_pos);
 
-  // Snap cursor to midpoint of pixel rectangle.
-  cursor_->setTarget(logicalToWidgetTransform().map(QPointF(snapped_image_pos) +
-                                                    QPointF(0.5, 0.5)));
+  cursor_->setTarget(logicalToWidgetTransform().mapRect(bin_rect));
   cursor_->setGeometry(0, 0, width(), height());
   cursor_->update();
 }

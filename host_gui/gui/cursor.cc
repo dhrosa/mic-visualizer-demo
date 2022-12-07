@@ -18,8 +18,11 @@ void Cursor::paintEvent(QPaintEvent* event) {
   pen.setColor(QColor::fromHslF(0, 0, 0.5, 0.5));
   painter.setPen(pen);
 
+  const QPointF center = target_.center();
   // Horizontal
-  painter.drawLine(QLineF(0, target_.y(), width(), target_.y()));
+  painter.drawLine(QLineF(0, center.y(), width(), center.y()));
   // Vertical
-  painter.drawLine(QLineF(target_.x(), 0, target_.x(), height()));
+  painter.drawLine(QLineF(center.x(), 0, center.x(), height()));
+
+  painter.drawRect(target_);
 }
