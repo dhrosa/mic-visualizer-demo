@@ -56,7 +56,7 @@ struct MainWindow::Impl {
 };
 
 MainWindow::Impl::Impl(MainWindow* window)
-    : window(window), data(2000, frequency_bins.size()) {
+    : window(window), data(768, frequency_bins.size()) {
   initViewer();
   initToolBar();
   initStatusBar();
