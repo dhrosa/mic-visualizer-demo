@@ -57,7 +57,15 @@ FetchContent_MakeAvailable(absl benchmark fftw3 googletest)
 include(GoogleTest)
 enable_testing()
 find_package(Qt6 REQUIRED COMPONENTS Widgets)
-find_package(OpenMP REQUIRED)
+
+option(MIC_ENABLE_OPENMP "Enable OpenMP for certain operations." OFF)
+
+if(MIC_ENABLE_OPENMP)
+  message(STATUS "OpenMP enabled.")
+  find_package(OpenMP REQUIRED)
+else()
+  message(STATUS "OpenMP disabled.")
+endif()
 
 include_directories(.)
 
