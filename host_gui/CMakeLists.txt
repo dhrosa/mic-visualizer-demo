@@ -5,7 +5,7 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 # Flags shared between C and C++ targets
-add_compile_options(-O1 -g3 -march=native)
+add_compile_options(-O1 -g3 -march=skylake)
 # Flags only for C++ targets
 # TODO(dhrosa): These flags are GCC-only. Use a generator expression.
 set(cxx_flags -ftemplate-backtrace-limit=0 -fconcepts-diagnostics-depth=10)
@@ -13,11 +13,23 @@ add_compile_options("$<$<COMPILE_LANGUAGE:CXX>:${cxx_flags}>")
 
 find_program(CCACHE_PROGRAM ccache)
 if(CCACHE_PROGRAM)
-  set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE "${CCACHE_PROGRAM}")
-  message(STATUS "Using ccache found at ${CCACHE_PROGRAM}")
+  # set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE "${CCACHE_PROGRAM}")
+  message(STATUS "Enabling ccache")
+  list(APPEND launchers "${CCACHE_PROGRAM}")
 else()
-  message(STATUS "ccache not found.")
+  message(STATUS "ccache not found")
 endif()
+
+find_program(DISTCC_PROGRAM distcc)
+if(DISTCC_PROGRAM)
+  message(STATUS "Enabling distcc")
+  list(APPEND launchers "${DISTCC_PROGRAM}")
+else()
+  message(STATUS "distcc not found")
+endif()
+
+set(CMAKE_C_COMPILER_LAUNCHER "${launchers}")
+set(CMAKE_CXX_COMPILER_LAUNCHER "${launchers}")
 
 project(host_gui C CXX)
 
