@@ -8,12 +8,13 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 add_compile_options(-O1 -g3 -march=skylake)
 # Flags only for C++ targets
 # TODO(dhrosa): These flags are GCC-only. Use a generator expression.
-set(cxx_flags -ftemplate-backtrace-limit=0 -fconcepts-diagnostics-depth=10)
+set(cxx_flags
+    "$<$<CXX_COMPILER_ID:GNU>:-ftemplate-backtrace-limit=0;-fconcepts-diagnostics-depth=10>"
+)
 add_compile_options("$<$<COMPILE_LANGUAGE:CXX>:${cxx_flags}>")
 
 find_program(CCACHE_PROGRAM ccache)
 if(CCACHE_PROGRAM)
-  # set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE "${CCACHE_PROGRAM}")
   message(STATUS "Enabling ccache")
   list(APPEND launchers "${CCACHE_PROGRAM}")
 else()
