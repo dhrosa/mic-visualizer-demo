@@ -45,7 +45,7 @@ FetchContent_Declare(
 
 FetchContent_Declare(
   benchmark
-  GIT_REPOSITORY "https://github.com/google/benchmark.git"
+  GIT_REPOSITORY https://github.com/google/benchmark.git
   GIT_TAG v1.7.1)
 
 set(BENCHMARK_ENABLE_TESTING OFF)
@@ -54,7 +54,7 @@ FetchContent_Declare(
   GIT_REPOSITORY https://github.com/google/googletest.git
   GIT_TAG release-1.12.1)
 
-FetchContent_Declare(fftw3 URL "https://www.fftw.org/fftw-3.3.10.tar.gz")
+FetchContent_Declare(fftw3 URL https://www.fftw.org/fftw-3.3.10.tar.gz)
 
 FetchContent_Declare(
   eigen
