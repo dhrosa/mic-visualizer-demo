@@ -14,6 +14,7 @@
 #include "colormap_picker.h"
 #include "image_viewer.h"
 #include "model.h"
+#include "scroll_area.h"
 
 struct MainWindow::Impl {
   Impl(MainWindow* window);
@@ -30,6 +31,7 @@ struct MainWindow::Impl {
 
   MainWindow* window;
   ImageViewer* viewer;
+  ScrollArea* scroll_area;
 
   std::jthread update_thread;
 };
@@ -50,7 +52,9 @@ MainWindow::Impl::~Impl() {
 
 void MainWindow::Impl::initViewer() {
   viewer = new ImageViewer(model.imageSize());
-  window->setCentralWidget(viewer);
+  scroll_area = new ScrollArea();
+  scroll_area->setWidget(viewer);
+  window->setCentralWidget(scroll_area);
 }
 
 void MainWindow::Impl::initToolBar() {

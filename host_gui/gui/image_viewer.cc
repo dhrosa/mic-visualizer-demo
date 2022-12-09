@@ -12,7 +12,9 @@
 #include "colormaps.h"
 
 ImageViewer::ImageViewer(QSize image_size)
-    : image_(image_size, QImage::Format_RGB32), cursor_(new Cursor(this)) {
+    : image_size_(image_size),
+      image_(image_size, QImage::Format_RGB32),
+      cursor_(new Cursor(this)) {
   image_.fill(0xFF'00'00'00);
   setMouseTracking(true);
 }

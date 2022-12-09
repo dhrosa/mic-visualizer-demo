@@ -19,6 +19,8 @@ diy_cc_library(
                               absl::synchronization)
 set_property(TARGET image_viewer PROPERTY AUTOMOC ON)
 
+diy_cc_library(scroll_area AUTO LIBRARIES Qt6::Widgets)
+
 diy_cc_library(
   model AUTO
   LIBRARIES absl::any_invocable
@@ -45,4 +47,5 @@ diy_cc_library(
             absl::time
             model
             image_viewer
-            colormap_picker)
+            colormap_picker
+            scroll_area)

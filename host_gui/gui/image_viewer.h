@@ -15,7 +15,7 @@ class ImageViewer : public QWidget {
  public:
   ImageViewer(QSize image_size);
 
-  QSize sizeHint() const override { return maximumSize(); }
+  QSize sizeHint() const override { return image_size_; }
 
   QTransform logicalToWidgetTransform() const;
   QTransform widgetToLogicalTransform() const;
@@ -32,6 +32,7 @@ class ImageViewer : public QWidget {
   void paintEvent(QPaintEvent* event) override;
 
  private:
+  const QSize image_size_;
   Cursor* const cursor_;
   absl::Mutex mutex_;
   QImage image_ ABSL_GUARDED_BY(mutex_);
