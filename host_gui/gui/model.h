@@ -14,7 +14,7 @@
 
 class Model {
  public:
-  Model();
+  Model(double sample_rate = 24'000, std::size_t fft_window_size = 2048);
 
   Generator<absl::AnyInvocable<void(QImage&) &&>> Run();
 
@@ -27,8 +27,8 @@ class Model {
   }
 
  private:
-  const double sample_rate_ = 24'000;
-  const std::size_t fft_window_size_ = 2048;
+  const double sample_rate_;
+  const std::size_t fft_window_size_;
   const std::vector<double> frequency_bins_;
 
   CircularBuffer<double> data_;

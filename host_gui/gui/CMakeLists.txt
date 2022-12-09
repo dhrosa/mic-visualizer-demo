@@ -33,6 +33,8 @@ diy_cc_library(
             qimage_eigen
             lut)
 
+diy_cc_test(model_test AUTO)
+
 diy_cc_library(colormap_picker AUTO LIBRARIES Qt6::Widgets colormaps)
 
 diy_cc_library(
