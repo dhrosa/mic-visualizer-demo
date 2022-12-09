@@ -8,7 +8,8 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 add_compile_options(-O1 -g3 -march=skylake)
 # Flags only for C++ targets
 add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-ftemplate-backtrace-limit=0>)
-add_compile_options($<$<COMPILE_LANG_AND_ID:CXX,GNU>:-fconcepts-diagnostics-depth=10>)
+add_compile_options(
+  $<$<COMPILE_LANG_AND_ID:CXX,GNU>:-fconcepts-diagnostics-depth=10>)
 
 find_program(CCACHE_PROGRAM ccache)
 if(CCACHE_PROGRAM)
@@ -39,8 +40,8 @@ include(FetchContent)
 set(ABSL_PROPAGATE_CXX_STD ON)
 FetchContent_Declare(
   absl
-  GIT_REPOSITORY "https://github.com/abseil/abseil-cpp.git"
-  GIT_TAG 296abbd35a600785d6297738749336061ecb2221)
+  GIT_REPOSITORY https://github.com/abseil/abseil-cpp.git
+  GIT_TAG 522606b7fae37836c138e83f6eec0eabb9947dc0)
 
 FetchContent_Declare(
   benchmark
