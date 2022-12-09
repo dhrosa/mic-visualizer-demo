@@ -1,6 +1,7 @@
 #pragma once
 
 #include <absl/functional/any_invocable.h>
+#include <absl/time/time.h>
 
 #include <QImage>
 #include <QSize>
@@ -19,7 +20,11 @@ class Model {
 
   double FrequencyBin(std::size_t i) const { return frequency_bins_.at(i); }
 
-  QSize imageSize() const { return QSize(data_.width(), data_.height()); }
+  absl::Duration TimeDelta(std::int64_t n) const;
+
+  QSize imageSize() const noexcept {
+    return QSize(data_.width(), data_.height());
+  }
 
  private:
   const double sample_rate_ = 24'000;

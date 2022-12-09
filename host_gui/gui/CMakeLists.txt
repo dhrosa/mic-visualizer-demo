@@ -22,6 +22,7 @@ set_property(TARGET image_viewer PROPERTY AUTOMOC ON)
 diy_cc_library(
   model AUTO
   LIBRARIES absl::any_invocable
+            absl::time
             generator
             circular_buffer
             Qt6::Gui
@@ -35,5 +36,11 @@ diy_cc_library(
 diy_cc_library(colormap_picker AUTO LIBRARIES Qt6::Widgets colormaps)
 
 diy_cc_library(
-  main_window AUTO LIBRARIES Qt6::Widgets absl::log absl::str_format model
-                             image_viewer colormap_picker)
+  main_window AUTO
+  LIBRARIES Qt6::Widgets
+            absl::log
+            absl::str_format
+            absl::time
+            model
+            image_viewer
+            colormap_picker)

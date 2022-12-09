@@ -1,3 +1,5 @@
+#pragma once
+
 #include <absl/functional/any_invocable.h>
 #include <absl/synchronization/mutex.h>
 

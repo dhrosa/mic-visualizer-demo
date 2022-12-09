@@ -2,6 +2,7 @@
 
 #include <absl/log/log.h>
 #include <absl/strings/str_format.h>
+#include <absl/time/time.h>
 
 #include <QLabel>
 #include <QShortcut>
@@ -71,18 +72,28 @@ void MainWindow::Impl::initToolBar() {
 
 void MainWindow::Impl::initStatusBar() {
   QStatusBar* status_bar = window->statusBar();
+
   auto* frequency_label = new QLabel();
   QFont font = frequency_label->font();
   font.setFamily("monospace");
   frequency_label->setFont(font);
-
-  QObject::connect(
-      viewer, &ImageViewer::binHovered, [this, frequency_label](QPoint p) {
-        frequency_label->setText(QString::fromStdString(
-            absl::StrFormat("%.2f Hz", model.FrequencyBin(p.y()))));
-      });
-
   status_bar->addPermanentWidget(frequency_label);
+
+  auto* time_label = new QLabel();
+  time_label->setFont(font);
+  status_bar->addPermanentWidget(time_label);
+
+  QObject::connect(viewer, &ImageViewer::binHovered, [=, this](QPoint p) {
+    const double f = model.FrequencyBin(p.y());
+    frequency_label->setText(
+        QString::fromStdString(absl::StrFormat("%.2f Hz", f)));
+
+    const int t_index = p.x() - model.imageSize().width() - 1;
+    const absl::Duration t =
+        absl::Floor(model.TimeDelta(t_index), absl::Milliseconds(1));
+    time_label->setText(QString::fromStdString(
+        absl::StrFormat("T=%s", absl::FormatDuration(t))));
+  });
 }
 
 void MainWindow::Impl::initShortcuts() {
