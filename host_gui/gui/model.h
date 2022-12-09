@@ -17,6 +17,8 @@ class Model {
 
   Generator<absl::AnyInvocable<void(QImage&) &&>> Run();
 
+  double FrequencyBin(std::size_t i) const { return frequency_bins_.at(i); }
+
   QSize imageSize() const { return QSize(data_.width(), data_.height()); }
 
  private:

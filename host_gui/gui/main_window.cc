@@ -1,6 +1,7 @@
 #include "main_window.h"
 
 #include <absl/log/log.h>
+#include <absl/strings/str_format.h>
 #include <absl/synchronization/mutex.h>
 
 #include <QLabel>
@@ -82,7 +83,12 @@ void MainWindow::Impl::initStatusBar() {
   QFont font = frequency_label->font();
   font.setFamily("monospace");
   frequency_label->setFont(font);
-  frequency_label->setText("1234 Hz");
+
+  QObject::connect(
+      viewer, &ImageViewer::binHovered, [this, frequency_label](QPoint p) {
+        frequency_label->setText(QString::fromStdString(
+            absl::StrFormat("%.2f Hz", model.FrequencyBin(p.y()))));
+      });
 
   status_bar->addPermanentWidget(frequency_label);
 }

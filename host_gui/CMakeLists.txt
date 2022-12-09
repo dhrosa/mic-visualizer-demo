@@ -88,8 +88,9 @@ add_subdirectory(audio)
 add_subdirectory(image)
 add_subdirectory(gui)
 
-diy_cc_binary(main AUTO LIBRARIES Qt6::Widgets main_window absl::log_initialize
-                                  absl::log_globals)
+diy_cc_binary(
+  main AUTO LIBRARIES Qt6::Widgets main_window absl::failure_signal_handler
+                      absl::log_initialize absl::log_globals)
 
 add_custom_target(
   format_cc
