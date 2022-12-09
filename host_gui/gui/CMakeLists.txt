@@ -35,11 +35,5 @@ diy_cc_library(
 diy_cc_library(colormap_picker AUTO LIBRARIES Qt6::Widgets colormaps)
 
 diy_cc_library(
-  main_window AUTO
-  LIBRARIES Qt6::Widgets
-            absl::synchronization
-            absl::log
-            absl::str_format
-            model
-            image_viewer
-            colormap_picker)
+  main_window AUTO LIBRARIES Qt6::Widgets absl::log absl::str_format model
+                             image_viewer colormap_picker)

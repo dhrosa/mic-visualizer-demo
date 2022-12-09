@@ -2,12 +2,12 @@
 
 #include <absl/log/log.h>
 #include <absl/strings/str_format.h>
-#include <absl/synchronization/mutex.h>
 
 #include <QLabel>
 #include <QShortcut>
 #include <QStatusBar>
 #include <QToolBar>
+#include <stop_token>
 #include <thread>
 
 #include "colormap_picker.h"
@@ -23,17 +23,14 @@ struct MainWindow::Impl {
   void initStatusBar();
   void initShortcuts();
 
-  void UpdateLoop();
+  void UpdateLoop(std::stop_token stop_token);
 
   Model model;
-
-  absl::Mutex mutex;
-  bool stopping ABSL_GUARDED_BY(mutex) = false;
 
   MainWindow* window;
   ImageViewer* viewer;
 
-  std::vector<std::thread> threads;
+  std::jthread update_thread;
 };
 
 MainWindow::Impl::Impl(MainWindow* window) : window(window) {
@@ -42,17 +39,12 @@ MainWindow::Impl::Impl(MainWindow* window) : window(window) {
   initStatusBar();
   initShortcuts();
 
-  threads.emplace_back([this] { UpdateLoop(); });
+  update_thread = std::jthread(&Impl::UpdateLoop, this);
 }
 
 MainWindow::Impl::~Impl() {
-  {
-    absl::MutexLock lock(&mutex);
-    stopping = true;
-  }
-  for (std::thread& thread : threads) {
-    thread.join();
-  }
+  update_thread.request_stop();
+  update_thread.join();
 }
 
 void MainWindow::Impl::initViewer() {
@@ -98,13 +90,10 @@ void MainWindow::Impl::initShortcuts() {
   new QShortcut(QKeySequence::Quit, window, [&] { window->close(); });
 }
 
-void MainWindow::Impl::UpdateLoop() {
+void MainWindow::Impl::UpdateLoop(std::stop_token stop_token) {
   for (auto&& render : model.Run()) {
-    {
-      absl::MutexLock lock(&mutex);
-      if (stopping) {
-        return;
-      }
+    if (stop_token.stop_requested()) {
+      return;
     }
     viewer->UpdateImage(std::move(render));
   }
