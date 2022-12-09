@@ -7,10 +7,10 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 # Flags shared between C and C++ targets
 add_compile_options(-O1 -g3 -march=skylake)
 # Flags only for C++ targets
-# TODO(dhrosa): These flags are GCC-only. Use a generator expression.
-set(cxx_flags
-    "$<$<CXX_COMPILER_ID:GNU>:-ftemplate-backtrace-limit=0;-fconcepts-diagnostics-depth=10>"
-)
+list(APPEND cxx_flags -ftemplate-backtrace-limit=0)
+list(APPEND cxx_flags "$<$<CXX_COMPILER_ID:GNU>:-fconcepts-diagnostics-depth=10>")
+list(APPEND cxx_flags "$<$<CXX_COMPILER_ID:Clang>:-stdlib=libc++>")
+
 add_compile_options("$<$<COMPILE_LANGUAGE:CXX>:${cxx_flags}>")
 
 find_program(CCACHE_PROGRAM ccache)
