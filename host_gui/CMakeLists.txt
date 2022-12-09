@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.18)
+cmake_minimum_required(VERSION 3.24)
 set(CMAKE_CXX_STANDARD 20)
 
 # Adding FFTW as a dependency causes absl to fail to link without this.
