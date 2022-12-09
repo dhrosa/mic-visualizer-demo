@@ -13,26 +13,35 @@
 
 ImageViewer::ImageViewer(QSize image_size)
     : image_size_(image_size),
-      image_(image_size, QImage::Format_RGB32),
+      primary_(image_size, QImage::Format_RGB32),
       cursor_(new Cursor(this)) {
-  image_.fill(0xFF'00'00'00);
+  primary_.fill(0xFF'00'00'00);
+  secondary_ = primary_.copy();
   setMouseTracking(true);
 }
 
 QTransform ImageViewer::logicalToWidgetTransform() const {
-  return QTransform::fromScale(static_cast<double>(width()) / image_.width(),
-                               static_cast<double>(height()) / image_.height());
+  return QTransform::fromScale(
+      static_cast<double>(width()) / image_size_.width(),
+      static_cast<double>(height()) / image_size_.height());
 }
 
 QTransform ImageViewer::widgetToLogicalTransform() const {
-  return QTransform::fromScale(static_cast<double>(image_.width()) / width(),
-                               static_cast<double>(image_.height()) / height());
+  return QTransform::fromScale(
+      static_cast<double>(image_size_.width()) / width(),
+      static_cast<double>(image_size_.height()) / height());
 }
 
 void ImageViewer::UpdateImage(absl::AnyInvocable<void(QImage&) &&> f) {
+  QImage* image;
   {
     absl::MutexLock lock(&mutex_);
-    std::move(f)(image_);
+    image = &secondary_;
+  }
+  std::move(f)(*image);
+  {
+    absl::MutexLock lock(&mutex_);
+    std::swap(primary_, secondary_);
   }
   update();
 }
@@ -68,6 +77,6 @@ void ImageViewer::paintEvent(QPaintEvent* event) {
   absl::MutexLock lock(&mutex_);
   const QRect source_rect =
       widgetToLogicalTransform().mapRect(QRectF(dest_rect)).toAlignedRect();
-  painter.setWindow(image_.rect());
-  painter.drawImage(source_rect.topLeft(), image_, source_rect);
+  painter.setWindow(primary_.rect());
+  painter.drawImage(source_rect.topLeft(), primary_, source_rect);
 }

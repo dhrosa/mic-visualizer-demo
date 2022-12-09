@@ -34,6 +34,9 @@ class ImageViewer : public QWidget {
  private:
   const QSize image_size_;
   Cursor* const cursor_;
+  // We double-buffer the images so that the caller can write to one image while
+  // we're rendering the previous one without competing for the mutex.
   absl::Mutex mutex_;
-  QImage image_ ABSL_GUARDED_BY(mutex_);
+  QImage primary_ ABSL_GUARDED_BY(mutex_);
+  QImage secondary_ ABSL_GUARDED_BY(mutex_);
 };
