@@ -7,19 +7,19 @@
 namespace {
 template <int width, int height>
 QIcon GenerateIcon(std::span<const std::uint32_t> lut) {
-  using Buffer = std::array<std::uint32_t, width * height * 4>;
-  auto buffer = std::make_unique_for_overwrite<Buffer>();
-  std::uint32_t* data = buffer->data();
+  // libc++ doesn't support make_unique_for_overwrite as of 20222/12/8
+  auto buffer =
+      std::unique_ptr<std::uint32_t[]>(new std::uint32_t[width * height * 4]);
   for (int r = 0; r < height; ++r) {
-    std::uint32_t* row = &data[r * width];
+    std::uint32_t* row = &buffer[r * width];
     for (int c = 0; c < width; ++c) {
       row[c] = lut[(r * width + c) % lut.size()];
     }
   }
-  const auto cleanup = [](void* p) { delete static_cast<Buffer*>(p); };
-  return QIcon(QPixmap::fromImage(
-      QImage(reinterpret_cast<const uchar*>(buffer->data()), width, height,
-             QImage::Format_ARGB32, +cleanup, buffer.release())));
+  const auto* const data = reinterpret_cast<const uchar*>(buffer.get());
+  const auto cleanup = [](void* p) { delete[] static_cast<std::uint32_t*>(p); };
+  return QIcon(QPixmap::fromImage(QImage(
+      data, width, height, QImage::Format_ARGB32, +cleanup, buffer.release())));
 }
 }  // namespace
 

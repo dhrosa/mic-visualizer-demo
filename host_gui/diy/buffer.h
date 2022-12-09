@@ -44,7 +44,8 @@ class Buffer : public std::ranges::view_interface<Buffer<T>> {
 
 template <typename T>
 Buffer<T> Buffer<T>::Uninitialized(std::size_t n) noexcept {
-  auto storage = std::make_unique_for_overwrite<T[]>(n);
+  // libc++ doesn't support make_unique_for_overwrite as of 20222/12/8
+  auto storage = std::unique_ptr<T[]>(new T[n]);
   std::span<T> span(storage.get(), n);
   return Buffer(span, [storage = std::move(storage)] {});
 }
