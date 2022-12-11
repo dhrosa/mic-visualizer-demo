@@ -44,6 +44,8 @@ class TaskBase {
 
  protected:
   struct PromiseBase;
+  template <typename P>
+  struct Awaiter;
   Handle handle_;
 };
 
@@ -62,10 +64,26 @@ struct TaskBase::PromiseBase {
   }
 };
 
+template <typename P>
+struct TaskBase::Awaiter {
+  TaskBase* task;
+
+  bool await_ready() const noexcept { return false; }
+
+  std::coroutine_handle<> await_suspend(std::coroutine_handle<> current) {
+    task->handle_.template promise<P>().next = current;
+    return task->handle_.get();
+  }
+
+  auto await_resume() {
+    auto& promise = task->handle_.template promise<P>();
+    return promise.ReturnOrThrow();
+  }
+};
+
 template <typename T = void>
 class Task : public TaskBase {
   struct Promise;
-  struct Awaiter;
 
  public:
   using promise_type = Promise;
@@ -80,7 +98,7 @@ class Task : public TaskBase {
     return std::move(promise.final_value);
   }
 
-  auto operator co_await() { return Awaiter{this}; }
+  auto operator co_await() { return Awaiter<Promise>{this}; }
 };
 
 template <typename T>
@@ -98,6 +116,11 @@ struct Task<T>::Promise : public TaskBase::PromiseBase {
       next.resume();
     }
   }
+
+  T ReturnOrThrow() {
+    MaybeRethrow();
+    return std::move(final_value);
+  }
 };
 
 template <>
@@ -111,6 +134,8 @@ class Task<void> : public TaskBase {
   using TaskBase::operator=;
 
   void Wait();
+
+  auto operator co_await() { return Awaiter<Promise>{this}; }
 };
 
 struct Task<void>::Promise : public TaskBase::PromiseBase {
@@ -119,7 +144,13 @@ struct Task<void>::Promise : public TaskBase::PromiseBase {
     return Task<void>(Handle(handle));
   }
 
-  void return_void() {}
+  void return_void() {
+    if (next) {
+      next.resume();
+    }
+  }
+
+  void ReturnOrThrow() { MaybeRethrow(); }
 };
 
 void Task<void>::Wait() {
@@ -129,20 +160,3 @@ void Task<void>::Wait() {
     std::rethrow_exception(promise.exception);
   }
 }
-
-template <typename T>
-struct Task<T>::Awaiter {
-  Task<T>* task;
-
-  bool await_ready() { return false; }
-
-  std::coroutine_handle<> await_suspend(std::coroutine_handle<> current) {
-    task->handle_.template promise<Promise>().next = current;
-    return task->handle_.get();
-  }
-
-  T await_resume() {
-    Promise& promise = task->handle_.template promise<Promise>();
-    return std::move(promise.final_value);
-  }
-};

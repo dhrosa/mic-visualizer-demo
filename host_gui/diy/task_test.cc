@@ -25,7 +25,7 @@ TEST(TaskTest, ReturnVoid) {
   EXPECT_TRUE(called);
 }
 
-TEST(TaskTest, Chain) {
+TEST(TaskTest, ChainValues) {
   auto task_a = []() -> Task<int> { co_return 1; };
   auto task_b = [](Task<int> a) -> Task<int> {
     int val_a = co_await a;
@@ -33,4 +33,20 @@ TEST(TaskTest, Chain) {
   };
 
   EXPECT_EQ(task_b(task_a()).Wait(), 3);
+}
+
+TEST(TaskTest, ChainVoid) {
+  int value = 0;
+  auto task_a = [](int& value) -> Task<> {
+    value = 1;
+    co_return;
+  };
+  auto task_b = [](int& value, Task<> a) -> Task<> {
+    co_await a;
+    value += 2;
+    co_return;
+  };
+
+  task_b(value, task_a(value)).Wait();
+  EXPECT_EQ(value, 3);
 }
