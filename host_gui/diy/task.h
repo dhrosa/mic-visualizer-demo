@@ -43,7 +43,23 @@ class TaskBase {
   ~TaskBase() = default;
 
  protected:
+  struct PromiseBase;
   Handle handle_;
+};
+
+struct TaskBase::PromiseBase {
+  std::exception_ptr exception;
+  std::coroutine_handle<> next;
+
+  auto initial_suspend() noexcept { return std::suspend_always{}; }
+  auto final_suspend() noexcept { return std::suspend_always{}; }
+  void unhandled_exception() { exception = std::current_exception(); }
+
+  void MaybeRethrow() {
+    if (exception) {
+      std::rethrow_exception(exception);
+    }
+  }
 };
 
 template <typename T = void>
@@ -60,9 +76,7 @@ class Task : public TaskBase {
   T Wait() {
     handle_->resume();
     Promise& promise = handle_.template promise<Promise>();
-    if (promise.exception) {
-      std::rethrow_exception(promise.exception);
-    }
+    promise.MaybeRethrow();
     return std::move(promise.final_value);
   }
 
@@ -70,19 +84,14 @@ class Task : public TaskBase {
 };
 
 template <typename T>
-struct Task<T>::Promise {
+struct Task<T>::Promise : public TaskBase::PromiseBase {
   T final_value;
-  std::exception_ptr exception;
-  std::coroutine_handle<> next;
 
   Task<T> get_return_object() {
     auto handle = std::coroutine_handle<Promise>::from_promise(*this);
     return Task<T>(Handle(handle));
   }
 
-  auto initial_suspend() noexcept { return std::suspend_always{}; }
-  auto final_suspend() noexcept { return std::suspend_always{}; }
-  void unhandled_exception() { exception = std::current_exception(); }
   void return_value(T value) {
     final_value = value;
     if (next) {
@@ -104,17 +113,12 @@ class Task<void> : public TaskBase {
   void Wait();
 };
 
-struct Task<void>::Promise {
-  std::exception_ptr exception;
-
+struct Task<void>::Promise : public TaskBase::PromiseBase {
   Task<void> get_return_object() {
     auto handle = std::coroutine_handle<Promise>::from_promise(*this);
     return Task<void>(Handle(handle));
   }
 
-  auto initial_suspend() noexcept { return std::suspend_always{}; }
-  auto final_suspend() noexcept { return std::suspend_always{}; }
-  void unhandled_exception() { exception = std::current_exception(); }
   void return_void() {}
 };
 
