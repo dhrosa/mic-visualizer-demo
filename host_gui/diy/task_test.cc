@@ -50,3 +50,14 @@ TEST(TaskTest, ChainVoid) {
   task_b(value, task_a(value)).Wait();
   EXPECT_EQ(value, 3);
 }
+
+TEST(TaskTest, ValueToVoidConversion) {
+  bool called = false;
+  auto task = [](bool& called) -> Task<int> {
+    called = true;
+    co_return 3;
+  };
+
+  Task<>(task(called)).Wait();
+  EXPECT_TRUE(called);
+}

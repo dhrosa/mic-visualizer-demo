@@ -37,6 +37,7 @@ class Handle {
 
 class TaskBase {
  public:
+  TaskBase() = default;
   TaskBase(Handle handle) noexcept : handle_(std::move(handle)) {}
   TaskBase(TaskBase&& other) noexcept = default;
   TaskBase& operator=(TaskBase&& other) noexcept = default;
@@ -135,6 +136,15 @@ class Task<void> : public TaskBase {
 
   using TaskBase::TaskBase;
   using TaskBase::operator=;
+
+  // Support explicit conversion from a value-returning Task.
+  template <typename T>
+    requires(!std::is_void_v<T>)
+  explicit Task(Task<T> task) {
+    *this = [](auto&& task) -> Task<> {
+      [[maybe_unused]] auto&& val = co_await task;
+    }(std::move(task));
+  }
 
   void Wait();
 
