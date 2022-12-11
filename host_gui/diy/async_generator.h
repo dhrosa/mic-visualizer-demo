@@ -13,6 +13,7 @@ class AsyncGenerator {
 
  public:
   using promise_type = Promise;
+  using value_type = T;
 
   explicit AsyncGenerator(Handle handle) : handle_(std::move(handle)) {}
 
@@ -78,3 +79,25 @@ struct AsyncGenerator<T>::Iterator {
     co_return *this;
   }
 };
+
+template <typename T>
+constexpr bool kIsAsyncGenerator = false;
+
+template <typename T>
+constexpr bool kIsAsyncGenerator<AsyncGenerator<T>> = true;
+
+template <typename T>
+concept IsAsyncGenerator = kIsAsyncGenerator<T>;
+
+template <typename Producer, typename Consumer>
+concept Chainable = kIsAsyncGenerator<Producer> &&
+                    requires(Producer producer, Consumer consumer) {
+                      { consumer(std::move(producer)) } -> IsAsyncGenerator;
+                    };
+
+template <typename P, typename C>
+auto operator|(P&& p, C&& c)
+  requires Chainable<P, C>
+{
+  return c(std::move(p));
+}
