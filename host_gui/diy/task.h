@@ -46,6 +46,14 @@ class TaskBase {
   struct PromiseBase;
   template <typename P>
   struct Awaiter;
+
+  template <typename P>
+  decltype(auto) Wait() {
+    handle_->resume();
+    auto& promise = handle_.template promise<P>();
+    return promise.ReturnOrThrow();
+  }
+
   Handle handle_;
 };
 
@@ -91,12 +99,7 @@ class Task : public TaskBase {
   using TaskBase::TaskBase;
   using TaskBase::operator=;
 
-  T Wait() {
-    handle_->resume();
-    Promise& promise = handle_.template promise<Promise>();
-    promise.MaybeRethrow();
-    return std::move(promise.final_value);
-  }
+  T Wait() { return TaskBase::template Wait<Promise>(); }
 
   auto operator co_await() { return Awaiter<Promise>{this}; }
 };
@@ -153,10 +156,4 @@ struct Task<void>::Promise : public TaskBase::PromiseBase {
   void ReturnOrThrow() { MaybeRethrow(); }
 };
 
-void Task<void>::Wait() {
-  handle_->resume();
-  Promise& promise = handle_.template promise<Promise>();
-  if (promise.exception) {
-    std::rethrow_exception(promise.exception);
-  }
-}
+void Task<void>::Wait() { TaskBase::template Wait<Promise>(); }
