@@ -1,5 +1,7 @@
 #pragma once
 
+#include <stdexcept>
+
 #include "handle.h"
 #include "task.h"
 
@@ -47,6 +49,13 @@ struct AsyncGenerator<T>::Promise {
     value = std::forward<U>(new_value);
     return std::suspend_always{};
   }
+
+  T& YieldOrThrow() {
+    if (exception) {
+      std::rethrow_exception(exception);
+    }
+    return value;
+  }
 };
 
 template <typename T>
@@ -57,7 +66,15 @@ struct AsyncGenerator<T>::Iterator {
     return generator->handle_->done();
   }
 
-  auto operator*() {}
+  T& operator*() {
+    return generator->handle_.template promise<Promise>().YieldOrThrow();
+  }
 
-  Iterator& operator++() { return *this; }
+  Task<Iterator> operator++() {
+    if (generator->handle_->done()) {
+      throw std::out_of_range("AsyncGenerator exhausted.");
+    }
+    generator->handle_->resume();
+    co_return *this;
+  }
 };
