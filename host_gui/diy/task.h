@@ -32,6 +32,7 @@ class Handle {
 template <typename T = void>
 class Task {
   struct Promise;
+  struct Awaiter;
 
  public:
   using promise_type = Promise;
@@ -50,6 +51,8 @@ class Task {
     return std::move(promise.final_value);
   }
 
+  auto operator co_await() { return Awaiter{this}; }
+
  private:
   Handle<Promise> handle_;
 };
@@ -58,6 +61,7 @@ template <typename T>
 struct Task<T>::Promise {
   T final_value;
   std::exception_ptr exception;
+  std::coroutine_handle<> next;
 
   Task<T> get_return_object() {
     auto handle = std::coroutine_handle<Promise>::from_promise(*this);
@@ -67,7 +71,12 @@ struct Task<T>::Promise {
   auto initial_suspend() noexcept { return std::suspend_always{}; }
   auto final_suspend() noexcept { return std::suspend_always{}; }
   void unhandled_exception() { exception = std::current_exception(); }
-  void return_value(T value) { final_value = value; }
+  void return_value(T value) {
+    final_value = value;
+    if (next) {
+      next.resume();
+    }
+  }
 };
 
 template <>
@@ -108,3 +117,17 @@ void Task<void>::Wait() {
     std::rethrow_exception(promise.exception);
   }
 }
+
+template <typename T>
+struct Task<T>::Awaiter {
+  Task<T>* task;
+
+  bool await_ready() { return false; }
+
+  std::coroutine_handle<> await_suspend(std::coroutine_handle<> current) {
+    task->handle_->promise().next = current;
+    return task->handle_.get();
+  }
+
+  T await_resume() { return std::move(task->handle_->promise().final_value); }
+};
