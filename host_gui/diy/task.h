@@ -2,13 +2,13 @@
 
 #include <coroutine>
 #include <exception>
+#include <type_traits>
 #include <utility>
 
-template <typename P = void>
 class Handle {
  public:
   Handle() = default;
-  explicit Handle(std::coroutine_handle<P> handle) : handle_(handle) {}
+  explicit Handle(std::coroutine_handle<> handle) : handle_(handle) {}
   Handle(Handle&& other) noexcept { *this = std::move(other); }
 
   Handle& operator=(Handle&& other) noexcept {
@@ -22,11 +22,17 @@ class Handle {
     }
   }
 
-  std::coroutine_handle<P> get() const noexcept { return handle_; }
-  std::coroutine_handle<P>* operator->() noexcept { return &handle_; }
+  template <typename P>
+  decltype(auto) promise() const noexcept {
+    return std::coroutine_handle<P>::from_address(handle_.address()).promise();
+  }
+
+  std::coroutine_handle<> get() const noexcept { return handle_; }
+
+  std::coroutine_handle<>* operator->() noexcept { return &handle_; }
 
  private:
-  std::coroutine_handle<P> handle_;
+  std::coroutine_handle<> handle_;
 };
 
 template <typename T = void>
@@ -37,14 +43,14 @@ class Task {
  public:
   using promise_type = Promise;
 
-  Task(Handle<Promise> handle) noexcept : handle_(std::move(handle)) {}
+  Task(Handle handle) noexcept : handle_(std::move(handle)) {}
   Task(Task&& other) = default;
   Task& operator=(Task&& other) = default;
   ~Task() = default;
 
   T Wait() {
     handle_->resume();
-    Promise& promise = handle_->promise();
+    Promise& promise = handle_.template promise<Promise>();
     if (promise.exception) {
       std::rethrow_exception(promise.exception);
     }
@@ -54,7 +60,7 @@ class Task {
   auto operator co_await() { return Awaiter{this}; }
 
  private:
-  Handle<Promise> handle_;
+  Handle handle_;
 };
 
 template <typename T>
@@ -85,7 +91,7 @@ class Task<void> {
 
  public:
   using promise_type = Promise;
-  Task(Handle<Promise> handle) noexcept : handle_(std::move(handle)) {}
+  Task(Handle handle) noexcept : handle_(std::move(handle)) {}
   Task(Task&& other) = default;
   Task& operator=(Task&& other) = default;
   ~Task() = default;
@@ -93,7 +99,7 @@ class Task<void> {
   void Wait();
 
  private:
-  Handle<Promise> handle_;
+  Handle handle_;
 };
 
 struct Task<void>::Promise {
@@ -112,7 +118,7 @@ struct Task<void>::Promise {
 
 void Task<void>::Wait() {
   handle_->resume();
-  Promise& promise = handle_->promise();
+  Promise& promise = handle_.template promise<Promise>();
   if (promise.exception) {
     std::rethrow_exception(promise.exception);
   }
@@ -125,9 +131,12 @@ struct Task<T>::Awaiter {
   bool await_ready() { return false; }
 
   std::coroutine_handle<> await_suspend(std::coroutine_handle<> current) {
-    task->handle_->promise().next = current;
+    task->handle_.template promise<Promise>().next = current;
     return task->handle_.get();
   }
 
-  T await_resume() { return std::move(task->handle_->promise().final_value); }
+  T await_resume() {
+    Promise& promise = task->handle_.template promise<Promise>();
+    return std::move(promise.final_value);
+  }
 };
