@@ -35,18 +35,27 @@ class Handle {
   std::coroutine_handle<> handle_;
 };
 
+class TaskBase {
+ public:
+  TaskBase(Handle handle) noexcept : handle_(std::move(handle)) {}
+  TaskBase(TaskBase&& other) noexcept = default;
+  TaskBase& operator=(TaskBase&& other) noexcept = default;
+  ~TaskBase() = default;
+
+ protected:
+  Handle handle_;
+};
+
 template <typename T = void>
-class Task {
+class Task : public TaskBase {
   struct Promise;
   struct Awaiter;
 
  public:
   using promise_type = Promise;
 
-  Task(Handle handle) noexcept : handle_(std::move(handle)) {}
-  Task(Task&& other) = default;
-  Task& operator=(Task&& other) = default;
-  ~Task() = default;
+  using TaskBase::TaskBase;
+  using TaskBase::operator=;
 
   T Wait() {
     handle_->resume();
@@ -58,9 +67,6 @@ class Task {
   }
 
   auto operator co_await() { return Awaiter{this}; }
-
- private:
-  Handle handle_;
 };
 
 template <typename T>
@@ -86,20 +92,16 @@ struct Task<T>::Promise {
 };
 
 template <>
-class Task<void> {
+class Task<void> : public TaskBase {
   struct Promise;
 
  public:
   using promise_type = Promise;
-  Task(Handle handle) noexcept : handle_(std::move(handle)) {}
-  Task(Task&& other) = default;
-  Task& operator=(Task&& other) = default;
-  ~Task() = default;
+
+  using TaskBase::TaskBase;
+  using TaskBase::operator=;
 
   void Wait();
-
- private:
-  Handle handle_;
 };
 
 struct Task<void>::Promise {
