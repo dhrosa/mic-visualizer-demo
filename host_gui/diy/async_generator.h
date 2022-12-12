@@ -18,12 +18,28 @@ class AsyncGenerator {
 
   explicit AsyncGenerator(Handle handle) : handle_(std::move(handle)) {}
 
+  // Implicitly convertible from a synchronous Generator
+  AsyncGenerator(Generator<T> sync_generator);
+
+  // Moveable.
+  AsyncGenerator(AsyncGenerator&&) = default;
+  AsyncGenerator& operator=(AsyncGenerator&&) = default;
+
   Task<Iterator> begin();
   auto end() { return Sentinel{}; }
 
  private:
   Handle handle_;
 };
+
+template <typename T>
+AsyncGenerator<T>::AsyncGenerator(Generator<T> sync_generator) {
+  *this = [](Generator<T> gen) -> AsyncGenerator<T> {
+    for (auto&& val : gen) {
+      co_yield std::move(val);
+    }
+  }(std::move(sync_generator));
+}
 
 template <typename T>
 auto AsyncGenerator<T>::begin() -> Task<Iterator> {
@@ -103,13 +119,5 @@ template <typename P, typename C>
 auto operator|(P&& p, C&& c)
   requires Chainable<P, C>
 {
-  if constexpr (kIsAsyncGenerator<P>) {
-    return c(std::move(p));
-  } else {
-    return c([&]() -> AsyncGenerator<typename P::value_type> {
-      for (auto&& sync_val : std::forward<P>(p)) {
-        co_yield std::move(sync_val);
-      }
-    }());
-  }
+  return c(std::move(p));
 }
