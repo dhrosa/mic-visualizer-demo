@@ -2,6 +2,7 @@
 
 #include <stdexcept>
 
+#include "generator.h"
 #include "handle.h"
 #include "task.h"
 
@@ -90,14 +91,25 @@ template <typename T>
 concept IsAsyncGenerator = kIsAsyncGenerator<T>;
 
 template <typename Producer, typename Consumer>
-concept Chainable = kIsAsyncGenerator<Producer> &&
-                    requires(Producer producer, Consumer consumer) {
-                      { consumer(std::move(producer)) } -> IsAsyncGenerator;
-                    };
+concept Chainable =
+    (kIsAsyncGenerator<Producer> || kIsSyncGenerator<Producer>) &&
+    requires(Producer producer, Consumer consumer) {
+      {
+        consumer(std::declval<AsyncGenerator<typename Producer::value_type>>())
+      } -> IsAsyncGenerator;
+    };
 
 template <typename P, typename C>
 auto operator|(P&& p, C&& c)
   requires Chainable<P, C>
 {
-  return c(std::move(p));
+  if constexpr (kIsAsyncGenerator<P>) {
+    return c(std::move(p));
+  } else {
+    return c([&]() -> AsyncGenerator<typename P::value_type> {
+      for (auto&& sync_val : std::forward<P>(p)) {
+        co_yield std::move(sync_val);
+      }
+    }());
+  }
 }

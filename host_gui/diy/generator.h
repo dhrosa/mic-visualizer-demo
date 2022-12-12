@@ -19,9 +19,9 @@ class Generator {
   struct Iterator;
 
  public:
-  // Needed to be recognized as a coroutine.
-
   using promise_type = Promise;
+  using value_type = T;
+
   Generator() = default;
   Generator(Handle handle)
       : shared_handle_(std::make_shared<HandleCleanup>(handle)),
@@ -121,3 +121,9 @@ struct Generator<T>::HandleCleanup {
   HandleCleanup(Handle handle) : handle(handle) {}
   ~HandleCleanup() { handle.destroy(); }
 };
+
+template <typename T>
+constexpr bool kIsSyncGenerator = false;
+
+template <typename T>
+constexpr bool kIsSyncGenerator<Generator<T>> = true;

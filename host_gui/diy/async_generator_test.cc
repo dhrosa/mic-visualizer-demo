@@ -47,8 +47,25 @@ TEST(AsyncGeneratorTest, Nested) {
   EXPECT_THAT(Materialize(gen_b(gen_a())).Wait(), ElementsAre(2, 4, 6));
 }
 
-TEST(AsyncGeneratorTest, PipeOperator) {
+TEST(AsyncGeneratorTest, ChainAsyncToAsync) {
   auto gen_a = []() -> AsyncGenerator<int> {
+    co_yield 1;
+    co_yield 2;
+    co_yield 3;
+  };
+
+  auto gen_b = [](AsyncGenerator<int> values) -> AsyncGenerator<int> {
+    for (auto iter = co_await values.begin(); iter != values.end();
+         co_await ++iter) {
+      co_yield *iter * 2;
+    }
+  };
+
+  EXPECT_THAT(Materialize(gen_a() | gen_b).Wait(), ElementsAre(2, 4, 6));
+}
+
+TEST(AsyncGeneratorTest, ChainSyncToAsync) {
+  auto gen_a = []() -> Generator<int> {
     co_yield 1;
     co_yield 2;
     co_yield 3;
