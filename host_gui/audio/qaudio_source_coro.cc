@@ -55,7 +55,9 @@ void QAudioSourceCoro::OnStateChange(QAudio::State state) {
 
 AsyncGenerator<Buffer<std::int16_t>> QAudioSourceCoro::Frames() {
   while (true) {
+    qDebug() << "Awaiting state change.";
     QAudio::State state = co_await StateChangeAwaiter{this};
+    qDebug() << "Await complete. State: " << state;
     if (state == QAudio::StoppedState) {
       if (source_.error() == QAudio::NoError) {
         co_return;
