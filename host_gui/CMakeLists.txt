@@ -70,7 +70,7 @@ target_include_directories(eigen INTERFACE ${eigen_SOURCE_DIR})
 FetchContent_MakeAvailable(absl benchmark fftw3 googletest)
 include(GoogleTest)
 enable_testing()
-find_package(Qt6 REQUIRED COMPONENTS Widgets)
+find_package(Qt6 REQUIRED COMPONENTS Widgets Multimedia)
 
 option(MIC_ENABLE_OPENMP "Enable OpenMP for certain operations." OFF)
 

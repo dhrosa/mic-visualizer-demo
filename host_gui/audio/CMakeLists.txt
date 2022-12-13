@@ -26,3 +26,8 @@ diy_cc_library(spectrum AUTO LIBRARIES fftw3 generator buffer)
 target_include_directories(spectrum PRIVATE ${fftw3_SOURCE_DIR}/api)
 
 diy_cc_test(spectrum_test AUTO)
+
+diy_cc_library(
+  qaudio_source_coro AUTO LIBRARIES Qt6::Multimedia async_generator buffer
+                                    absl::synchronization)
+diy_cc_test(qaudio_source_coro_test AUTO)
