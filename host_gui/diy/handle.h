@@ -28,6 +28,9 @@ class Handle {
   std::coroutine_handle<> get() const noexcept { return handle_; }
 
   std::coroutine_handle<>* operator->() noexcept { return &handle_; }
+  const std::coroutine_handle<>* operator->() const noexcept {
+    return &handle_;
+  }
 
  private:
   std::coroutine_handle<> handle_;

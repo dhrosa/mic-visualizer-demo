@@ -7,6 +7,10 @@
 
 #include "handle.h"
 
+// TODO(dhrosa): The inheritance going on might be easier if we instead
+// conditionally inherit from a base type whose value depends on whether T is
+// void.
+
 class TaskBase {
  public:
   TaskBase() = default;
@@ -15,27 +19,37 @@ class TaskBase {
   TaskBase& operator=(TaskBase&& other) noexcept = default;
   ~TaskBase() = default;
 
+  bool done() const noexcept { return handle_->done(); }
+
  protected:
   struct PromiseBase;
+
+  // Awaitable for awaiting the completion of this task.
   template <typename P>
   struct Awaiter;
-
-  template <typename P>
-  decltype(auto) Wait() {
-    handle_->resume();
-    auto& promise = handle_.template promise<P>();
-    return promise.ReturnOrThrow();
-  }
 
   Handle handle_;
 };
 
 struct TaskBase::PromiseBase {
+  // The exception thrown by body of the task, if any.
   std::exception_ptr exception;
-  std::coroutine_handle<> next;
 
-  auto initial_suspend() noexcept { return std::suspend_always{}; }
-  auto final_suspend() noexcept { return std::suspend_always{}; }
+  // The suspended coroutine awaiting this task's completion, if any.
+  std::coroutine_handle<> parent;
+
+  // Lazy execution. Task body is deferred to the first explicit resume() call.
+  std::suspend_always initial_suspend() noexcept { return {}; }
+
+  // Resume execution of parent coroutine that was awaiting this task's
+  // completion, if any.
+  std::suspend_always final_suspend() noexcept {
+    if (parent) {
+      parent.resume();
+    }
+    return {};
+  }
+
   void unhandled_exception() { exception = std::current_exception(); }
 
   void MaybeRethrow() {
@@ -47,18 +61,22 @@ struct TaskBase::PromiseBase {
 
 template <typename P>
 struct TaskBase::Awaiter {
+  // The child task whose completion is being awaited.
   TaskBase* task;
 
+  // Always suspend the parent.
   bool await_ready() const noexcept { return false; }
 
-  std::coroutine_handle<> await_suspend(std::coroutine_handle<> current) {
-    task->handle_.template promise<P>().next = current;
+  // Tell the child task to resume the parent (current task) when it completes.
+  // Then context switch into the child task.
+  std::coroutine_handle<> await_suspend(std::coroutine_handle<> parent) {
+    task->handle_.template promise<P>().parent = parent;
     return task->handle_.get();
   }
 
+  // Child task has completed; return its final value.
   auto await_resume() {
-    auto& promise = task->handle_.template promise<P>();
-    return promise.ReturnOrThrow();
+    return task->handle_.template promise<P>().ReturnOrThrow();
   }
 };
 
@@ -72,13 +90,35 @@ class Task : public TaskBase {
   using TaskBase::TaskBase;
   using TaskBase::operator=;
 
-  T Wait() { return TaskBase::template Wait<Promise>(); }
-
   auto operator co_await() { return Awaiter<Promise>{this}; }
+
+  T Wait();
 };
 
 template <typename T>
+T Task<T>::Wait() {
+  // An arbitrary task can suspend any number of times, so simply resuming the
+  // task doesn't mean it will then be complete. So we contruct a trivial
+  // `notifier` coroutine that has known suspension points; the initial
+  // suspension point (since Promise::initial_suspend() always suspends), and
+  // the awaiting of task completion (Awaiter always suspends the parent
+  // coroutine)
+  //
+  // After two resume() calls for the above suspension points, control won't
+  // return back to us until the end of `notifier`'s body, at which point we
+  // know that the waited on task has completed.
+  auto notifier = [](Task<T>& task) -> Task<T> {
+    co_return (co_await task);
+  }(*this);
+  notifier.handle_->resume();
+  notifier.handle_->resume();
+  return notifier.handle_.template promise<Promise>().ReturnOrThrow();
+}
+
+template <typename T>
 struct Task<T>::Promise : public TaskBase::PromiseBase {
+  using value_type = T;
+
   T final_value;
 
   Task<T> get_return_object() {
@@ -86,12 +126,7 @@ struct Task<T>::Promise : public TaskBase::PromiseBase {
     return Task<T>(Handle(handle));
   }
 
-  void return_value(T value) {
-    final_value = value;
-    if (next) {
-      next.resume();
-    }
-  }
+  void return_value(T value) { final_value = value; }
 
   T ReturnOrThrow() {
     MaybeRethrow();
@@ -118,24 +153,37 @@ class Task<void> : public TaskBase {
     }(std::move(task));
   }
 
-  void Wait();
-
   auto operator co_await() { return Awaiter<Promise>{this}; }
+
+  void Wait();
 };
 
 struct Task<void>::Promise : public TaskBase::PromiseBase {
+  using value_type = void;
+
   Task<void> get_return_object() {
     auto handle = std::coroutine_handle<Promise>::from_promise(*this);
     return Task<void>(Handle(handle));
   }
 
-  void return_void() {
-    if (next) {
-      next.resume();
-    }
-  }
+  void return_void() {}
 
   void ReturnOrThrow() { MaybeRethrow(); }
 };
 
-void Task<void>::Wait() { TaskBase::template Wait<Promise>(); }
+void Task<void>::Wait() {
+  // An arbitrary task can suspend any number of times, so simply resuming the
+  // task doesn't mean it will then be complete. So we contruct a trivial
+  // `notifier` coroutine that has known suspension points; the initial
+  // suspension point (since Promise::initial_suspend() always suspends), and
+  // the awaiting of task completion (Awaiter always suspends the parent
+  // coroutine)
+  //
+  // After two resume() calls for the above suspension points, control won't
+  // return back to us until the end of `notifier`'s body, at which point we
+  // know that the waited on task has completed.
+  auto notifier = [](Task<>& task) -> Task<> { co_await task; }(*this);
+  notifier.handle_->resume();
+  notifier.handle_->resume();
+  notifier.handle_.template promise<Promise>().ReturnOrThrow();
+}
