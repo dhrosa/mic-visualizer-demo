@@ -31,3 +31,7 @@ diy_cc_library(
   qaudio_source_coro AUTO LIBRARIES Qt6::Multimedia async_generator buffer
                                     absl::synchronization)
 diy_cc_test(qaudio_source_coro_test AUTO Qt6::Core)
+
+diy_cc_library(input_source AUTO LIBRARIES async_generator buffer miniaudio
+                                           absl::cleanup)
+diy_cc_test(input_source_test AUTO)

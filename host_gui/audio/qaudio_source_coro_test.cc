@@ -22,7 +22,7 @@ class QAudioSourceCoroTest : public testing::Test {
       std::jthread([](std::stop_token token) { RunApp(token); });
 };
 
-TEST_F(QAudioSourceCoroTest, Empty) { QAudioSourceCoro source; }
+TEST_F(QAudioSourceCoroTest, DISABLED_Empty) { QAudioSourceCoro source; }
 
 TEST_F(QAudioSourceCoroTest, DISABLED_SingleFrame) {
   QAudioSourceCoro source;

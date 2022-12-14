@@ -67,7 +67,16 @@ FetchContent_Populate(eigen)
 add_library(eigen INTERFACE)
 target_include_directories(eigen INTERFACE ${eigen_SOURCE_DIR})
 
-FetchContent_MakeAvailable(absl benchmark fftw3 googletest)
+FetchContent_Declare(
+  miniaudio
+  GIT_REPOSITORY https://github.com/mackron/miniaudio.git
+  GIT_TAG c153a947919808419b0bf3f56b6f2ee606d6c5f4)
+
+FetchContent_MakeAvailable(absl benchmark fftw3 googletest miniaudio)
+
+add_library(miniaudio INTERFACE)
+target_include_directories(miniaudio INTERFACE ${miniaudio_SOURCE_DIR})
+
 include(GoogleTest)
 enable_testing()
 find_package(Qt6 REQUIRED COMPONENTS Core Widgets Multimedia)
