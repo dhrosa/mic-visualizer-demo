@@ -58,10 +58,8 @@ struct Task<T>::ValuePromiseBase {
   T final_value;
 
   template <typename U>
-  void return_value(U&& value)
-    requires(!kIsVoidTask)
-  {
-    this->final_value = std::forward<U>(value);
+  void return_value(U&& value) {
+    this->final_value = std::move(value);
   }
 };
 
@@ -85,11 +83,23 @@ struct Task<T>::Promise
 
   // Resume execution of parent coroutine that was awaiting this task's
   // completion, if any.
-  std::suspend_always final_suspend() noexcept {
-    if (parent) {
-      parent.resume();
-    }
-    return {};
+  auto final_suspend() noexcept {
+    struct FinalAwaiter {
+      std::coroutine_handle<> parent;
+
+      bool await_ready() noexcept { return false; }
+
+      std::coroutine_handle<> await_suspend(
+          [[maybe_unused]] std::coroutine_handle<> task_handle) noexcept {
+        if (parent) {
+          return parent;
+        }
+        return std::noop_coroutine();
+      }
+
+      void await_resume() noexcept {}
+    };
+    return FinalAwaiter{std::exchange(parent, nullptr)};
   }
 
   void unhandled_exception() { exception = std::current_exception(); }
@@ -134,18 +144,11 @@ template <typename T>
 T Task<T>::Wait() {
   // An arbitrary task can suspend any number of times, so simply resuming the
   // task doesn't mean it will then be complete. So we contruct a trivial
-  // `notifier` coroutine that has known suspension points; the initial
-  // suspension point (since Promise::initial_suspend() always suspends), and
-  // the awaiting of task completion (Awaiter always suspends the parent
-  // coroutine)
-  //
-  // After two resume() calls for the above suspension points, control won't
-  // return back to us until the end of `notifier`'s body, at which point we
-  // know that the waited on task has completed.
+  // `notifier` coroutine that has a known suspension location after the
+  // completion of this task.
   auto notifier = [](Task<T>& task) -> Task<T> {
     co_return (co_await task);
   }(*this);
-  notifier.handle_->resume();
   notifier.handle_->resume();
   return notifier.promise().ReturnOrThrow();
 }
