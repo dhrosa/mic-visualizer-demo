@@ -3,6 +3,8 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include <thread>
+
 TEST(TaskTest, ReturnValue) {
   bool called = false;
   auto task = [](bool& called) -> Task<int> {
@@ -60,4 +62,41 @@ TEST(TaskTest, ValueToVoidConversion) {
 
   Task<>(task(called)).Wait();
   EXPECT_TRUE(called);
+}
+
+// Awaitable that transfers execution of the coroutine to the given thread.
+auto TransferToThread(std::jthread& thread) {
+  struct Awaiter {
+    std::jthread* thread;
+
+    bool await_ready() { return false; }
+
+    void await_suspend(std::coroutine_handle<> handle) {
+      *thread = std::jthread(handle);
+    }
+
+    void await_resume() {}
+  };
+
+  return Awaiter{&thread};
+}
+
+TEST(TaskTest, ThreadTransfer) {
+  auto task = [](std::jthread& thread, bool& complete,
+                 std::thread::id& task_thread_id) -> Task<> {
+    co_await TransferToThread(thread);
+    task_thread_id = std::this_thread::get_id();
+    using namespace std::chrono_literals;
+    std::this_thread::sleep_for(100ms);
+    complete = true;
+  };
+
+  const std::thread::id caller_thread_id = std::this_thread::get_id();
+  std::thread::id task_thread_id;
+  std::jthread thread;
+  bool complete = false;
+  task(thread, complete, task_thread_id).Wait();
+  EXPECT_TRUE(complete);
+
+  EXPECT_NE(caller_thread_id, task_thread_id);
 }

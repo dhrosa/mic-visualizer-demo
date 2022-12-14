@@ -14,20 +14,14 @@ TEST(AsyncGeneratorTest, Empty) {
 template <typename T>
 Task<std::vector<T>> Materialize(AsyncGenerator<T> gen) {
   std::vector<T> out;
-  std::cout << "Materialize begin() await enter" << std::endl;
   auto iter = co_await gen.begin();
-  std::cout << "Materialize begin() await exit" << std::endl;
   while (true) {
-    std::cout << "Materialize end check" << std::endl;
     if (iter == gen.end()) {
       break;
     }
     out.push_back(*iter);
-    std::cout << "Materialize increment await enter " << std::endl;
     co_await ++iter;
-    std::cout << "Materialize increment await exit " << std::endl;
   }
-  std::cout << "Materialize exit count: " << out.size() << std::endl;
   co_return out;
 }
 

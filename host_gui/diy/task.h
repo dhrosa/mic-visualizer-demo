@@ -3,6 +3,7 @@
 #include <concepts>
 #include <coroutine>
 #include <exception>
+#include <latch>
 #include <type_traits>
 #include <utility>
 
@@ -142,13 +143,49 @@ auto Task<T>::operator co_await() {
 
 template <typename T>
 T Task<T>::Wait() {
-  // An arbitrary task can suspend any number of times, so simply resuming the
-  // task doesn't mean it will then be complete. So we contruct a trivial
-  // `notifier` coroutine that has a known suspension location after the
-  // completion of this task.
-  auto notifier = [](Task<T>& task) -> Task<T> {
+  // We create a custom coroutine that synchronously notifies the caller when
+  // its complete.
+  struct SyncPromise;
+
+  struct SyncTask {
+    Handle handle;
+
+    using promise_type = SyncPromise;
+  };
+
+  // TODO(dhrosa): This is largely similar to Task::Promise.
+  struct SyncPromise
+      : std::conditional_t<kIsVoidTask, VoidPromiseBase, ValuePromiseBase> {
+    std::latch complete{1};
+    std::exception_ptr exception;
+
+    SyncTask get_return_object() {
+      return {Handle(std::coroutine_handle<SyncPromise>::from_promise(*this))};
+    }
+
+    void unhandled_exception() { exception = std::current_exception(); }
+    auto initial_suspend() { return std::suspend_never{}; }
+    auto final_suspend() noexcept {
+      complete.count_down();
+      return std::suspend_always{};
+    }
+
+    T ReturnOrThrow() {
+      if (exception) {
+        std::rethrow_exception(exception);
+      }
+      if constexpr (kIsVoidTask) {
+        return;
+      } else {
+        return std::move(this->final_value);
+      }
+    }
+  };
+
+  auto sync_task = [](Task<T>& task) -> SyncTask {
     co_return (co_await task);
   }(*this);
-  notifier.handle_->resume();
-  return notifier.promise().ReturnOrThrow();
+  SyncPromise& promise = sync_task.handle.template promise<SyncPromise>();
+  promise.complete.wait();
+  return promise.ReturnOrThrow();
 }

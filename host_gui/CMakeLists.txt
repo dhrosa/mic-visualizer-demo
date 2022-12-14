@@ -5,7 +5,7 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 # Flags shared between C and C++ targets
-add_compile_options(-O1 -g3 -march=skylake)
+add_compile_options(-O0 -g3 -ggdb -march=skylake)
 # Flags only for C++ targets
 add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-ftemplate-backtrace-limit=0>)
 add_compile_options(
