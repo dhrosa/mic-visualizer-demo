@@ -79,7 +79,7 @@ target_include_directories(miniaudio INTERFACE ${miniaudio_SOURCE_DIR})
 
 include(GoogleTest)
 enable_testing()
-find_package(Qt6 REQUIRED COMPONENTS Core Widgets Multimedia)
+find_package(Qt6 REQUIRED COMPONENTS Core Widgets)
 
 option(MIC_ENABLE_OPENMP "Enable OpenMP for certain operations." OFF)
 
