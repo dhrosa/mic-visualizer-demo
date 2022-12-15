@@ -87,3 +87,15 @@ TEST(AsyncGeneratorTest, Map) {
   EXPECT_THAT(Materialize(gen_a().Map([](int x) { return x * 2; })).Wait(),
               ElementsAre(2, 4, 6));
 }
+
+TEST(AsyncGeneratorTest, MapWithExtraArguments) {
+  auto gen_a = []() -> AsyncGenerator<int> {
+    co_yield 1;
+    co_yield 2;
+    co_yield 3;
+  };
+
+  EXPECT_THAT(
+      Materialize(gen_a().Map([](int x, int y) { return x * y; }, 2)).Wait(),
+      ElementsAre(2, 4, 6));
+}

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdexcept>
+#include <type_traits>
 
 #include "generator.h"
 #include "handle.h"
@@ -9,6 +10,8 @@
 template <typename T>
 class AsyncGenerator {
   struct Promise;
+  template <typename F, typename... Args>
+  using MapResult = std::invoke_result_t<F, T, Args...>;
 
  public:
   using promise_type = Promise;
@@ -31,8 +34,8 @@ class AsyncGenerator {
 
   // Creates a new AsyncGenerator whose values are the result of applying `f` to
   // each value of the current generator.
-  template <typename F>
-  auto Map(F&& f) && -> AsyncGenerator<decltype(f(std::declval<T>()))>;
+  template <typename F, typename... Args>
+  auto Map(F&& f, Args&&... args) && -> AsyncGenerator<MapResult<F, Args...>>;
 
  private:
   struct AdvanceAwaiter;
@@ -98,15 +101,15 @@ Task<T*> AsyncGenerator<T>::operator()() {
 }
 
 template <typename T>
-template <typename F>
+template <typename F, typename... Args>
 auto AsyncGenerator<T>::Map(
-    F&& f) && -> AsyncGenerator<decltype(f(std::declval<T>()))> {
-  using U = decltype(f(std::declval<T>()));
-  return [](AsyncGenerator<T> gen, F f) -> AsyncGenerator<U> {
+    F&& f, Args&&... args) && -> AsyncGenerator<MapResult<F, Args...>> {
+  return [](AsyncGenerator<T> gen, F f,
+            Args... args) -> AsyncGenerator<MapResult<F, Args...>> {
     while (T* value = co_await gen) {
-      co_yield f(std::move(*value));
+      co_yield f(std::move(*value), args...);
     }
-  }(std::move(*this), std::move(f));
+  }(std::move(*this), std::move(f), std::move(args)...);
 }
 
 // Awaitable created in the parent coroutine that context switches into the
