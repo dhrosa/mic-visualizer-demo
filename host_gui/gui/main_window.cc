@@ -108,12 +108,11 @@ void MainWindow::Impl::initShortcuts() {
 void MainWindow::Impl::UpdateLoop(std::stop_token stop_token) {
   auto loop = [this](std::stop_token stop_token) -> Task<> {
     auto frames = model.Run();
-    for (auto iter = co_await frames.begin(); iter != frames.end();
-         co_await ++iter) {
+    while (co_await frames.Advance()) {
       if (stop_token.stop_requested()) {
         co_return;
       }
-      auto& render = *iter;
+      auto& render = frames.Value();
       viewer->UpdateImage(std::move(render));
     }
   };

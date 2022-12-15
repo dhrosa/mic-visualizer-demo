@@ -9,8 +9,6 @@
 template <typename T>
 class AsyncGenerator {
   struct Promise;
-  struct Iterator;
-  struct Sentinel {};
 
  public:
   using promise_type = Promise;
@@ -23,13 +21,14 @@ class AsyncGenerator {
   AsyncGenerator(AsyncGenerator&&) = default;
   AsyncGenerator& operator=(AsyncGenerator&&) = default;
 
-  // An awaitable that returns an iterator once awaited on.
-  Task<Iterator> begin();
+  // Attempts to produce the next value in the sequence. Returns false if there
+  // are no more values, and true otherwise.
+  Task<bool> Advance();
 
-  auto end() { return Sentinel{}; }
+  T& Value();
 
  private:
-  struct IncrementAwaiter;
+  struct AdvanceAwaiter;
   struct YieldAwaiter;
 
   AsyncGenerator(Handle handle) : handle_(std::move(handle)) {}
@@ -94,15 +93,24 @@ struct AsyncGenerator<T>::Promise {
 };
 
 template <typename T>
-auto AsyncGenerator<T>::begin() -> Task<Iterator> {
-  co_await IncrementAwaiter{this};
-  co_return Iterator{this};
+Task<bool> AsyncGenerator<T>::Advance() {
+  co_await AdvanceAwaiter{this};
+  auto& p = promise();
+  if (p.exception) {
+    std::rethrow_exception(p.exception);
+  }
+  co_return !p.exhausted;
+}
+
+template <typename T>
+T& AsyncGenerator<T>::Value() {
+  return promise().value;
 }
 
 // Awaitable created in the parent coroutine that context switches into the
 // generator coroutine's body.
 template <typename T>
-struct AsyncGenerator<T>::IncrementAwaiter {
+struct AsyncGenerator<T>::AdvanceAwaiter {
   AsyncGenerator<T>* generator;
 
   bool await_ready() noexcept { return false; }
@@ -133,25 +141,6 @@ struct AsyncGenerator<T>::YieldAwaiter {
   }
 
   void await_resume() noexcept {}
-};
-
-template <typename T>
-struct AsyncGenerator<T>::Iterator {
-  AsyncGenerator<T>* generator;
-
-  bool operator==([[maybe_unused]] Sentinel s) const {
-    return generator->promise().exhausted;
-  }
-
-  T& operator*() { return generator->promise().YieldOrThrow(); }
-
-  Task<Iterator> operator++() {
-    if (generator->promise().exhausted) {
-      throw std::out_of_range("AsyncGenerator exhausted.");
-    }
-    co_await IncrementAwaiter{generator};
-    co_return Iterator{generator};
-  }
 };
 
 template <typename T>
