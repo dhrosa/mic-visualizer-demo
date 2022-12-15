@@ -4,6 +4,8 @@
 #include <gtest/gtest.h>
 
 using testing::ElementsAre;
+using testing::Eq;
+using testing::Pointee;
 
 TEST(AsyncGeneratorTest, Empty) {
   auto gen = []() -> AsyncGenerator<int> { co_return; }();
@@ -27,6 +29,16 @@ TEST(AsyncGeneratorTest, Finite) {
   };
 
   EXPECT_THAT(Materialize(gen()).Wait(), ElementsAre(1, 2, 3));
+}
+
+TEST(AsyncGeneratorTest, PropagatesExceptions) {
+  auto gen = []() -> AsyncGenerator<int> {
+    co_yield 1;
+    throw std::invalid_argument("some error");
+  }();
+
+  EXPECT_THAT(gen().Wait(), Pointee(Eq(1)));
+  EXPECT_THROW(gen().Wait(), std::invalid_argument);
 }
 
 TEST(AsyncGeneratorTest, Nested) {
