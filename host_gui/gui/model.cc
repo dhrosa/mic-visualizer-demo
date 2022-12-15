@@ -22,13 +22,13 @@ absl::Duration Model::TimeDelta(std::int64_t n) const {
 AsyncGenerator<absl::AnyInvocable<void(QImage&) &&>> Model::Run() {
   auto spectra = PowerSpectrum(sample_rate_, fft_window_size_,
                                SimulatedSource(absl::Milliseconds(10)));
-  for (auto&& spectrum : std::move(spectra)) {
-    std::ranges::for_each(spectrum, [&](auto& v) {
+  while (Buffer<double>* spectrum = co_await spectra) {
+    std::ranges::for_each(*spectrum, [&](auto& v) {
       v = std::log2(v + 1);
       min_value_ = std::min(v, min_value_);
       max_value_ = std::max(v, max_value_);
     });
-    data_.AppendColumn(spectrum);
+    data_.AppendColumn(*spectrum);
     co_yield [&](QImage& image) {
       auto lut = active_colormap_->entries;
       auto dest = EigenView(image);

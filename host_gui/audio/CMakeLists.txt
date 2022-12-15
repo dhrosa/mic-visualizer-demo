@@ -20,7 +20,7 @@ diy_cc_library(source AUTO LIBRARIES cardinal generator buffer absl::time)
 
 diy_cc_test(source_test AUTO)
 
-diy_cc_library(spectrum AUTO LIBRARIES fftw3 generator buffer)
+diy_cc_library(spectrum AUTO LIBRARIES fftw3 async_generator buffer)
 # For some reason the fftw3 library itself doesn't automatically add the right
 # include directories?
 target_include_directories(spectrum PRIVATE ${fftw3_SOURCE_DIR}/api)

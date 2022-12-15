@@ -61,22 +61,22 @@ Buffer<std::complex<double>> Spectrum(fftw_plan plan,
 }
 
 template <typename T>
-Generator<std::vector<T>> ChunkedSamples(std::size_t n,
-                                         Generator<Buffer<T>> source) {
+AsyncGenerator<std::vector<T>> ChunkedSamples(
+    std::size_t n, AsyncGenerator<Buffer<T>> source) {
   std::vector<T> chunk(n);
   std::span<T> unfilled_chunk_span(chunk);
-  auto source_iter = source.begin();
-  if (source_iter == source.end()) {
+  Buffer<T>* source_frame = co_await source;
+  if (!source_frame) {
     co_return;
   }
-  std::span<T> current_source_span = source_iter->span();
+  std::span<T> current_source_span = source_frame->span();
   while (true) {
     if (current_source_span.empty()) {
-      ++source_iter;
-      if (source_iter == source.end()) {
+      source_frame = co_await source;
+      if (!source_frame) {
         co_return;
       }
-      current_source_span = source_iter->span();
+      current_source_span = source_frame->span();
     }
     const std::size_t copy_count =
         std::min(unfilled_chunk_span.size(), current_source_span.size());
@@ -128,16 +128,17 @@ std::vector<double> FrequencyBins(std::size_t n, double fs) {
   return bins;
 }
 
-Generator<Buffer<double>> PowerSpectrum(
+AsyncGenerator<Buffer<double>> PowerSpectrum(
     double sample_rate, std::size_t window_size,
-    Generator<Buffer<std::int16_t>> source) {
+    AsyncGenerator<Buffer<std::int16_t>> source) {
   CheckEven(window_size);
   const std::vector<double> window = Window(window_size);
   const double psd_scale_factor = ScaleFactor(window) / (2 * sample_rate);
   const Plan plan = CreatePlan(window_size);
-  for (std::vector<std::int16_t> frame : ChunkedSamples(window_size, source)) {
+
+  auto chunked_samples = ChunkedSamples(window_size, std::move(source));
+  while (std::vector<std::int16_t>* frame = co_await chunked_samples) {
     co_yield SingleFramePowerSpectrum(plan.plan, window, psd_scale_factor,
-                                      frame);
+                                      *frame);
   }
-  co_return;
 }
