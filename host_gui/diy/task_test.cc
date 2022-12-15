@@ -100,3 +100,13 @@ TEST(TaskTest, ThreadTransfer) {
 
   EXPECT_NE(caller_thread_id, task_thread_id);
 }
+
+TEST(TaskTest, Map) {
+  auto task = []() -> Task<int> { co_return 1; };
+  EXPECT_EQ(task().Map([](int x) { return x + 2; }).Wait(), 3);
+}
+
+TEST(TaskTest, MapExtraArguments) {
+  auto task = []() -> Task<int> { co_return 1; };
+  EXPECT_EQ(task().Map([](int x, int y) { return x + y; }, 2).Wait(), 3);
+}

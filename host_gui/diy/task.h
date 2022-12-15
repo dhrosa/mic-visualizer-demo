@@ -13,6 +13,9 @@ template <typename T = void>
 class Task {
   struct Promise;
 
+  template <typename F, typename... Args>
+  using MapResult = std::invoke_result_t<F, T, Args...>;
+
  public:
   using promise_type = Promise;
 
@@ -25,17 +28,18 @@ class Task {
   template <typename U>
   Task(Task<U> other)
     requires(std::same_as<T, void> && !std::same_as<U, void>)
-  {
-    *this = [](Task<U> task) -> Task<> {
-      [[maybe_unused]] U value = co_await task;
-    }(std::move(other));
-  };
+      : Task(std::move(other).Map([](auto&&) {})) {}
 
   bool done() const noexcept { return handle_->done(); }
 
   auto operator co_await();
 
   T Wait();
+
+  // Creates a new Task whose value is the result of applying `f` to
+  // the retuen value of the current task.
+  template <typename F, typename... Args>
+  Task<MapResult<F, Args...>> Map(F&& f, Args&&... args) &&;
 
  private:
   static constexpr bool kIsVoidTask = std::same_as<T, void>;
@@ -188,4 +192,12 @@ T Task<T>::Wait() {
   SyncPromise& promise = sync_task.handle.template promise<SyncPromise>();
   promise.complete.wait();
   return promise.ReturnOrThrow();
+}
+
+template <typename T>
+template <typename F, typename... Args>
+auto Task<T>::Map(F&& f, Args&&... args) && -> Task<MapResult<F, Args...>> {
+  return [](Task<T> task, F f, Args... args) -> Task<MapResult<F, Args...>> {
+    co_return f(co_await task, args...);
+  }(std::move(*this), std::move(f), std::move(args)...);
 }

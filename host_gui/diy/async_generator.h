@@ -35,7 +35,7 @@ class AsyncGenerator {
   // Creates a new AsyncGenerator whose values are the result of applying `f` to
   // each value of the current generator.
   template <typename F, typename... Args>
-  auto Map(F&& f, Args&&... args) && -> AsyncGenerator<MapResult<F, Args...>>;
+  AsyncGenerator<MapResult<F, Args...>> Map(F&& f, Args&&... args) &&;
 
  private:
   struct AdvanceAwaiter;
