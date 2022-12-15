@@ -3,15 +3,16 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+using testing::Gt;
+using testing::Pointee;
+using testing::SizeIs;
+
 TEST(InputSourceTest, SomeFrames) {
   auto gen = InputSource();
 
-  EXPECT_TRUE(gen.Advance().Wait());
-  EXPECT_GT(gen.Value().size(), 0);
+  auto non_empty = Pointee(SizeIs(Gt(0)));
 
-  EXPECT_TRUE(gen.Advance().Wait());
-  EXPECT_GT(gen.Value().size(), 0);
-
-  EXPECT_TRUE(gen.Advance().Wait());
-  EXPECT_GT(gen.Value().size(), 0);
+  EXPECT_THAT(gen().Wait(), non_empty);
+  EXPECT_THAT(gen().Wait(), non_empty);
+  EXPECT_THAT(gen().Wait(), non_empty);
 }

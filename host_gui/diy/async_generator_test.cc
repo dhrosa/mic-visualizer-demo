@@ -7,14 +7,14 @@ using testing::ElementsAre;
 
 TEST(AsyncGeneratorTest, Empty) {
   auto gen = []() -> AsyncGenerator<int> { co_return; }();
-  EXPECT_FALSE(gen.Advance().Wait());
+  EXPECT_THAT(gen().Wait(), testing::IsNull());
 }
 
 template <typename T>
 Task<std::vector<T>> Materialize(AsyncGenerator<T> gen) {
   std::vector<T> out;
-  while (co_await gen.Advance()) {
-    out.push_back(gen.Value());
+  while (T* value = co_await gen) {
+    out.push_back(*value);
   }
   co_return out;
 }
@@ -37,8 +37,8 @@ TEST(AsyncGeneratorTest, Nested) {
   };
 
   auto gen_b = [](AsyncGenerator<int> values) -> AsyncGenerator<int> {
-    while (co_await values.Advance()) {
-      co_yield values.Value() * 2;
+    while (int* value = co_await values) {
+      co_yield *value * 2;
     }
   };
 
@@ -53,8 +53,8 @@ TEST(AsyncGeneratorTest, ChainAsyncToAsync) {
   };
 
   auto gen_b = [](AsyncGenerator<int> values) -> AsyncGenerator<int> {
-    while (co_await values.Advance()) {
-      co_yield values.Value() * 2;
+    while (int* value = co_await values) {
+      co_yield *value * 2;
     }
   };
 
@@ -69,8 +69,8 @@ TEST(AsyncGeneratorTest, ChainSyncToAsync) {
   };
 
   auto gen_b = [](AsyncGenerator<int> values) -> AsyncGenerator<int> {
-    while (co_await values.Advance()) {
-      co_yield values.Value() * 2;
+    while (int* value = co_await values) {
+      co_yield *value * 2;
     }
   };
 

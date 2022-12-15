@@ -21,11 +21,13 @@ class AsyncGenerator {
   AsyncGenerator(AsyncGenerator&&) = default;
   AsyncGenerator& operator=(AsyncGenerator&&) = default;
 
-  // Attempts to produce the next value in the sequence. Returns false if there
-  // are no more values, and true otherwise.
-  Task<bool> Advance();
+  // Attempts to produce the next value in the sequence. Returns nullptr if
+  // there are no more values, or returns the next value. Any exceptions raised
+  // raised by the generator body are raised here.
+  Task<T*> operator()();
 
-  T& Value();
+  // Makes AsyncGneerator awaitable as if by awaiting on operator().
+  auto operator co_await() { return (*this)().operator co_await(); }
 
  private:
   struct AdvanceAwaiter;
@@ -83,28 +85,11 @@ struct AsyncGenerator<T>::Promise {
     value = std::forward<U>(new_value);
     return YieldAwaiter{std::exchange(this->parent, nullptr)};
   }
-
-  T& YieldOrThrow() {
-    if (exception) {
-      std::rethrow_exception(exception);
-    }
-    return value;
-  }
 };
 
 template <typename T>
-Task<bool> AsyncGenerator<T>::Advance() {
-  co_await AdvanceAwaiter{this};
-  auto& p = promise();
-  if (p.exception) {
-    std::rethrow_exception(p.exception);
-  }
-  co_return !p.exhausted;
-}
-
-template <typename T>
-T& AsyncGenerator<T>::Value() {
-  return promise().value;
+Task<T*> AsyncGenerator<T>::operator()() {
+  co_return (co_await AdvanceAwaiter{this});
 }
 
 // Awaitable created in the parent coroutine that context switches into the
@@ -121,7 +106,16 @@ struct AsyncGenerator<T>::AdvanceAwaiter {
     return generator->handle_.get();
   }
 
-  void await_resume() noexcept {}
+  T* await_resume() {
+    auto& promise = generator->promise();
+    if (promise.exception) {
+      std::rethrow_exception(promise.exception);
+    }
+    if (promise.exhausted) {
+      return nullptr;
+    }
+    return &promise.value;
+  }
 };
 
 // Awaitable created in the generator coroutine that context switches into the
