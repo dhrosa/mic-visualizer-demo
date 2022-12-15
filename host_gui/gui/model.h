@@ -9,14 +9,14 @@
 #include <vector>
 
 #include "colormaps.h"
-#include "diy/generator.h"
+#include "diy/async_generator.h"
 #include "image/circular_buffer.h"
 
 class Model {
  public:
   Model(double sample_rate = 24'000, std::size_t fft_window_size = 2048);
 
-  Generator<absl::AnyInvocable<void(QImage&) &&>> Run();
+  AsyncGenerator<absl::AnyInvocable<void(QImage&) &&>> Run();
 
   double FrequencyBin(std::size_t i) const { return frequency_bins_.at(i); }
 

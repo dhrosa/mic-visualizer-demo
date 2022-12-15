@@ -106,12 +106,18 @@ void MainWindow::Impl::initShortcuts() {
 }
 
 void MainWindow::Impl::UpdateLoop(std::stop_token stop_token) {
-  for (auto&& render : model.Run()) {
-    if (stop_token.stop_requested()) {
-      return;
+  auto loop = [this](std::stop_token stop_token) -> Task<> {
+    auto frames = model.Run();
+    for (auto iter = co_await frames.begin(); iter != frames.end();
+         co_await ++iter) {
+      if (stop_token.stop_requested()) {
+        co_return;
+      }
+      auto& render = *iter;
+      viewer->UpdateImage(std::move(render));
     }
-    viewer->UpdateImage(std::move(render));
-  }
+  };
+  loop(stop_token).Wait();
 }
 
 MainWindow::MainWindow() : impl_(std::make_unique<Impl>(this)) {}

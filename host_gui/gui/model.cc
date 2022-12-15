@@ -19,7 +19,7 @@ absl::Duration Model::TimeDelta(std::int64_t n) const {
   return absl::Seconds(n * fft_window_size_) / sample_rate_;
 }
 
-Generator<absl::AnyInvocable<void(QImage&) &&>> Model::Run() {
+AsyncGenerator<absl::AnyInvocable<void(QImage&) &&>> Model::Run() {
   auto spectra = PowerSpectrum(sample_rate_, fft_window_size_,
                                SimulatedSource(absl::Milliseconds(10)));
   for (auto&& spectrum : std::move(spectra)) {
