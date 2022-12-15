@@ -29,6 +29,11 @@ class AsyncGenerator {
   // Makes AsyncGneerator awaitable as if by awaiting on operator().
   auto operator co_await() { return (*this)().operator co_await(); }
 
+  // Creates a new AsyncGenerator whose values are the result of applying `f` to
+  // each value of the current generator.
+  template <typename F>
+  auto Map(F&& f) && -> AsyncGenerator<decltype(f(std::declval<T>()))>;
+
  private:
   struct AdvanceAwaiter;
   struct YieldAwaiter;
@@ -90,6 +95,18 @@ struct AsyncGenerator<T>::Promise {
 template <typename T>
 Task<T*> AsyncGenerator<T>::operator()() {
   co_return (co_await AdvanceAwaiter{this});
+}
+
+template <typename T>
+template <typename F>
+auto AsyncGenerator<T>::Map(
+    F&& f) && -> AsyncGenerator<decltype(f(std::declval<T>()))> {
+  using U = decltype(f(std::declval<T>()));
+  return [](AsyncGenerator<T> gen, F f) -> AsyncGenerator<U> {
+    while (T* value = co_await gen) {
+      co_yield f(std::move(*value));
+    }
+  }(std::move(*this), std::move(f));
 }
 
 // Awaitable created in the parent coroutine that context switches into the
