@@ -9,7 +9,7 @@
 #include <vector>
 
 #include "colormaps.h"
-#include "diy/async_generator.h"
+#include "diy/coro/async_generator.h"
 #include "image/circular_buffer.h"
 
 class Model {

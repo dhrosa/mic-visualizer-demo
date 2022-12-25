@@ -16,17 +16,17 @@ set_source_files_properties(cardinal.o PROPERTIES EXTERNAL_OBJECT true GENERATED
                                                                        true)
 set_target_properties(cardinal PROPERTIES LINKER_LANGUAGE C)
 
-diy_cc_library(source AUTO LIBRARIES cardinal generator buffer absl::time)
+diy_cc_library(source AUTO LIBRARIES cardinal diy_coro buffer absl::time)
 
 diy_cc_test(source_test AUTO)
 
-diy_cc_library(spectrum AUTO LIBRARIES fftw3 async_generator buffer)
+diy_cc_library(spectrum AUTO LIBRARIES fftw3 diy_coro buffer)
 # For some reason the fftw3 library itself doesn't automatically add the right
 # include directories?
 target_include_directories(spectrum PRIVATE ${fftw3_SOURCE_DIR}/api)
 
 diy_cc_test(spectrum_test AUTO)
 
-diy_cc_library(input_source AUTO LIBRARIES async_generator buffer miniaudio
+diy_cc_library(input_source AUTO LIBRARIES diy_coro buffer miniaudio
                                            absl::cleanup)
 diy_cc_test(input_source_test AUTO)

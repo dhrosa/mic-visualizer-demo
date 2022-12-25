@@ -25,7 +25,7 @@ diy_cc_library(
   model AUTO
   LIBRARIES absl::any_invocable
             absl::time
-            async_generator
+            diy_coro
             circular_buffer
             Qt6::Gui
             source

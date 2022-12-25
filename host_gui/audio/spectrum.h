@@ -3,8 +3,8 @@
 #include <cstdint>
 #include <vector>
 
-#include "diy/async_generator.h"
 #include "diy/buffer.h"
+#include "diy/coro/async_generator.h"
 
 std::vector<double> FrequencyBins(std::size_t n, double fs);
 

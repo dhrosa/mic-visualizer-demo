@@ -7,7 +7,7 @@
 #include <vector>
 
 #include "diy/buffer.h"
-#include "diy/generator.h"
+#include "diy/coro/generator.h"
 
 std::span<const std::int16_t> SimulatedSamples();
 

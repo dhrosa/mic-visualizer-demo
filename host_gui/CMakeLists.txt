@@ -77,6 +77,9 @@ FetchContent_MakeAvailable(absl benchmark fftw3 googletest miniaudio)
 add_library(miniaudio INTERFACE)
 target_include_directories(miniaudio INTERFACE ${miniaudio_SOURCE_DIR})
 
+FetchContent_Declare(diy_coro URL /home/dhrosa/diy/coro)
+FetchContent_MakeAvailable(diy_coro)
+
 include(GoogleTest)
 enable_testing()
 find_package(Qt6 REQUIRED COMPONENTS Core Widgets)
