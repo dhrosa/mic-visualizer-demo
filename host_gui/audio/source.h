@@ -7,7 +7,7 @@
 #include <vector>
 
 #include "diy/buffer.h"
-#include "diy/coro/generator.h"
+#include "diy/coro/async_generator.h"
 
 std::span<const std::int16_t> SimulatedSamples();
 
@@ -16,6 +16,6 @@ enum class SimulatedSourcePacing {
   kRealTime,
 };
 
-Generator<Buffer<std::int16_t>> SimulatedSource(
+AsyncGenerator<Buffer<std::int16_t>> SimulatedSource(
     absl::Duration period,
     SimulatedSourcePacing pacing = SimulatedSourcePacing::kRealTime);

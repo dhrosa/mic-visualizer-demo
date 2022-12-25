@@ -1,10 +1,12 @@
 #include "source.h"
 
-#include <absl/time/clock.h>
+#include <absl/time/time.h>
 
 #include <algorithm>
 #include <memory>
 #include <ranges>
+
+#include "diy/coro/sleep.h"
 
 // Symbols to access binary data embedded via linker.
 extern const std::int16_t _binary_cardinal_pcm_start[];
@@ -34,8 +36,8 @@ Buffer<std::int16_t> PeriodicSubspan(std::span<const std::int16_t> s,
 }
 }  // namespace
 
-Generator<Buffer<std::int16_t>> SimulatedSource(absl::Duration period,
-                                                SimulatedSourcePacing pacing) {
+AsyncGenerator<Buffer<std::int16_t>> SimulatedSource(
+    absl::Duration period, SimulatedSourcePacing pacing) {
   const auto samples = SimulatedSamples();
   const std::size_t frame_size = absl::ToInt64Seconds(kSampleRate * period);
   if (frame_size > samples.size()) {
@@ -45,7 +47,7 @@ Generator<Buffer<std::int16_t>> SimulatedSource(absl::Duration period,
   for (std::size_t frame_num = 0;; ++frame_num) {
     if (pacing == SimulatedSourcePacing::kRealTime) {
       const absl::Time next_frame_time = epoch + frame_num * period;
-      absl::SleepFor(next_frame_time - absl::Now());
+      co_await Sleep(next_frame_time - absl::Now());
     }
     co_yield PeriodicSubspan(samples, frame_num * frame_size, frame_size);
   }
