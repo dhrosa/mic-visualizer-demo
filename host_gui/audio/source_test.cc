@@ -50,3 +50,33 @@ TEST(SimulatedSourceTest, SourceLastSamplesMatch) {
   EXPECT_THAT(last->span().first(5952), ElementsAreArray(samples.last(5952)));
   EXPECT_THAT(last->span().last(90048), ElementsAreArray(samples.first(90048)));
 }
+
+std::vector<std::int16_t> NextFrame(
+    AsyncGenerator<Buffer<std::int16_t>>& source) {
+  if (auto* buffer = source().Wait()) {
+    return std::vector(buffer->begin(), buffer->end());
+  }
+  return {};
+}
+
+TEST(RampSourceTest, Loops) {
+  // This should result in 25 samples per frame in a 4 frame loop. The 5th frame
+  // should be identical to the first frame.
+  auto source = RampSource({.sample_rate = 100,
+                            .frame_period = absl::Milliseconds(250),
+                            .ramp_period = absl::Seconds(1),
+                            .frequency_min = 0,
+                            .frequency_max = 5});
+  const std::vector<std::int16_t> frames[] = {
+      NextFrame(source), NextFrame(source), NextFrame(source),
+      NextFrame(source), NextFrame(source),
+  };
+
+  using testing::Eq;
+  using testing::Ne;
+  EXPECT_THAT(frames[0], SizeIs(25));
+  EXPECT_THAT(frames[1], Ne(frames[0]));
+  EXPECT_THAT(frames[2], Ne(frames[1]));
+  EXPECT_THAT(frames[3], Ne(frames[2]));
+  EXPECT_THAT(frames[4], Eq(frames[0]));
+}
