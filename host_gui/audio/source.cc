@@ -6,7 +6,7 @@
 #include <memory>
 #include <ranges>
 
-#include "diy/coro/sleep.h"
+#include "diy/coro/executor.h"
 
 // Symbols to access binary data embedded via linker.
 extern const std::int16_t _binary_cardinal_pcm_start[];
@@ -43,11 +43,12 @@ AsyncGenerator<Buffer<std::int16_t>> SimulatedSource(
   if (frame_size > samples.size()) {
     throw std::invalid_argument("Period longer than simulated sample source.");
   }
+  SerialExecutor executor;
   const absl::Time epoch = absl::Now();
   for (std::size_t frame_num = 0;; ++frame_num) {
     if (pacing == SimulatedSourcePacing::kRealTime) {
       const absl::Time next_frame_time = epoch + frame_num * period;
-      co_await Sleep(next_frame_time - absl::Now());
+      co_await executor.Sleep(next_frame_time);
     }
     co_yield PeriodicSubspan(samples, frame_num * frame_size, frame_size);
   }
