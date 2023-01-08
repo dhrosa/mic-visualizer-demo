@@ -18,7 +18,7 @@ enum class SimulatedSourcePacing {
 
 AsyncGenerator<Buffer<std::int16_t>> SimulatedSource(
     absl::Duration period,
-    SimulatedSourcePacing pacing = SimulatedSourcePacing::kRealTime);
+    SimulatedSourcePacing pacing = SimulatedSourcePacing::kInstant);
 
 // A sinusoid whose frequency sweeps between [frequency_min, frequency_max) over
 // an interval of `ramp_period`.
@@ -31,5 +31,4 @@ struct RampSourceOptions {
   SimulatedSourcePacing pacing = SimulatedSourcePacing::kInstant;
 };
 
-AsyncGenerator<Buffer<std::int16_t>> RampSource(
-    const RampSourceOptions& options);
+AsyncGenerator<Buffer<std::int16_t>> RampSource(RampSourceOptions options);

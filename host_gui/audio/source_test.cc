@@ -39,8 +39,7 @@ TEST(SimulatedSourceTest, SourceFirstSamplesMatch) {
 TEST(SimulatedSourceTest, SourceLastSamplesMatch) {
   const std::span<const std::int16_t> samples = SimulatedSamples();
 
-  auto source =
-      SimulatedSource(absl::Seconds(4), SimulatedSourcePacing::kInstant);
+  auto source = SimulatedSource(absl::Seconds(4));
 
   EXPECT_THAT(source().Wait(), Pointee(SizeIs(96'000)));
 

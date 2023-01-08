@@ -20,8 +20,9 @@ absl::Duration Model::TimeDelta(std::int64_t n) const {
 }
 
 AsyncGenerator<absl::AnyInvocable<void(QImage&) &&>> Model::Run() {
-  auto spectra = PowerSpectrum(sample_rate_, fft_window_size_,
-                               SimulatedSource(absl::Milliseconds(10)));
+  auto source = RampSource({.pacing = SimulatedSourcePacing::kRealTime});
+  auto spectra =
+      PowerSpectrum(sample_rate_, fft_window_size_, std::move(source));
   while (Buffer<double>* spectrum = co_await spectra) {
     std::ranges::for_each(*spectrum, [&](auto& v) {
       v = std::log2(v + 1);

@@ -84,8 +84,7 @@ AsyncGenerator<Buffer<std::int16_t>> SimulatedSource(
   }
 }
 
-AsyncGenerator<Buffer<std::int16_t>> RampSource(
-    const RampSourceOptions& options) {
+AsyncGenerator<Buffer<std::int16_t>> RampSource(RampSourceOptions options) {
   const auto samples = RampSamples(options);
   auto frames = PaceSamples(samples, options.sample_rate, options.frame_period,
                             options.pacing);
