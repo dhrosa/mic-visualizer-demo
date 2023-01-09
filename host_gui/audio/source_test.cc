@@ -3,6 +3,8 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include "diy/coro/task.h"
+
 using testing::ElementsAreArray;
 using testing::Pointee;
 using testing::SizeIs;
@@ -26,13 +28,13 @@ TEST(SimulatedSourceTest, SourceFirstSamplesMatch) {
   const std::span<const std::int16_t> samples = SimulatedSamples();
   // 1ms @ 24kHz = 24 samples.
   auto source = SimulatedSource(absl::Milliseconds(1));
-  EXPECT_THAT(source().Wait(),
+  EXPECT_THAT(Task(source).Wait(),
               Pointee(ElementsAreArray(samples.subspan(0, 24))));
-  EXPECT_THAT(source().Wait(),
+  EXPECT_THAT(Task(source).Wait(),
               Pointee(ElementsAreArray(samples.subspan(24, 24))));
-  EXPECT_THAT(source().Wait(),
+  EXPECT_THAT(Task(source).Wait(),
               Pointee(ElementsAreArray(samples.subspan(48, 24))));
-  EXPECT_THAT(source().Wait(),
+  EXPECT_THAT(Task(source).Wait(),
               Pointee(ElementsAreArray(samples.subspan(72, 24))));
 }
 
@@ -41,9 +43,9 @@ TEST(SimulatedSourceTest, SourceLastSamplesMatch) {
 
   auto source = SimulatedSource(absl::Seconds(4));
 
-  EXPECT_THAT(source().Wait(), Pointee(SizeIs(96'000)));
+  EXPECT_THAT(Task(source).Wait(), Pointee(SizeIs(96'000)));
 
-  auto* last = source().Wait();
+  auto* last = Task(source).Wait();
   ASSERT_NE(last, nullptr);
   EXPECT_THAT(*last, SizeIs(96'000));
   EXPECT_THAT(last->span().first(5952), ElementsAreArray(samples.last(5952)));
@@ -52,7 +54,7 @@ TEST(SimulatedSourceTest, SourceLastSamplesMatch) {
 
 std::vector<std::int16_t> NextFrame(
     AsyncGenerator<Buffer<std::int16_t>>& source) {
-  if (auto* buffer = source().Wait()) {
+  if (auto* buffer = Task(source).Wait()) {
     return std::vector(buffer->begin(), buffer->end());
   }
   return {};

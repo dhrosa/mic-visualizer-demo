@@ -4,6 +4,8 @@
 #include <absl/strings/str_format.h>
 #include <absl/time/time.h>
 
+#include "diy/coro/task.h"
+
 #include <QLabel>
 #include <QShortcut>
 #include <QStatusBar>
