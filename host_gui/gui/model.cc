@@ -21,10 +21,10 @@ absl::Duration Model::TimeDelta(std::int64_t n) const {
 
 AsyncGenerator<absl::AnyInvocable<void(QImage&) &&>> Model::Run() {
   auto source = RampSource({.sample_rate = sample_rate_,
-      .ramp_period = absl::Seconds(10),
-      .frequency_min = 100,
-      .frequency_max = 5000,
-      .pacing = SimulatedSourcePacing::kRealTime});
+                            .ramp_period = absl::Seconds(10),
+                            .frequency_min = 100,
+                            .frequency_max = 5000,
+                            .pacing = SimulatedSourcePacing::kRealTime});
   auto spectra =
       PowerSpectrum(sample_rate_, fft_window_size_, std::move(source));
   while (Buffer<double>* spectrum = co_await spectra) {
@@ -36,7 +36,11 @@ AsyncGenerator<absl::AnyInvocable<void(QImage&) &&>> Model::Run() {
     data_.AppendColumn(*spectrum);
     co_yield [&](QImage& image) {
       auto lut = active_colormap_->entries;
-      auto dest = EigenView(image);
+
+      // We render the data upside-down so that higher frequencies are on the
+      // top. Note: our image has the opposite orientation compared to Eigen
+      // convention.
+      auto dest = EigenView(image).colwise().reverse();
 
       auto newer = data_.Newer();
       auto older = data_.Older();
