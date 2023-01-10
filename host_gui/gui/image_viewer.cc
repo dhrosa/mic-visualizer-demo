@@ -18,6 +18,8 @@ ImageViewer::ImageViewer(QSize image_size)
   primary_.fill(0xFF'00'00'00);
   secondary_ = primary_.copy();
   setMouseTracking(true);
+  setAttribute(Qt::WA_NoSystemBackground);
+  setAttribute(Qt::WA_OpaquePaintEvent);
 }
 
 QTransform ImageViewer::logicalToWidgetTransform() const {
