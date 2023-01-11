@@ -42,7 +42,8 @@ struct Plan {
 // Create a plan for an in-place complex-to-complex FFT.
 Plan CreatePlan(std::size_t n) {
   auto fake_buffer = FftwBuffer(n);
-  return {fftw_plan_dft_1d(n, reinterpret_cast<fftw_complex*>(fake_buffer.data()),
+  return {fftw_plan_dft_1d(n,
+                           reinterpret_cast<fftw_complex*>(fake_buffer.data()),
                            reinterpret_cast<fftw_complex*>(fake_buffer.data()),
                            FFTW_FORWARD, FFTW_ESTIMATE)};
 }
@@ -52,8 +53,9 @@ Buffer<std::complex<double>> Spectrum(fftw_plan plan,
                                       std::span<const std::int16_t> samples) {
   const std::size_t n = samples.size();
   Buffer<std::complex<double>> buffer = FftwBuffer(n);
-  std::ranges::transform(samples, window, buffer.begin(),
-                         [](std::int16_t s, double w) -> std::complex<double> { return w * s; });
+  std::ranges::transform(
+      samples, window, buffer.begin(),
+      [](std::int16_t s, double w) -> std::complex<double> { return w * s; });
   auto* buffer_data = reinterpret_cast<fftw_complex*>(buffer.data());
   // In-place FFT.
   fftw_execute_dft(plan, buffer_data, buffer_data);

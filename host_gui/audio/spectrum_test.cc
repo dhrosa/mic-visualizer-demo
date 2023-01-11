@@ -3,9 +3,9 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include "diy/coro/task.h"
-
 #include <ranges>
+
+#include "diy/coro/task.h"
 
 using testing::ElementsAre;
 using testing::IsNull;

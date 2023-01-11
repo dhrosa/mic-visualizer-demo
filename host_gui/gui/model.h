@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "colormaps.h"
+#include "diy/buffer.h"
 #include "diy/coro/async_generator.h"
 #include "image/circular_buffer.h"
 
@@ -27,6 +28,10 @@ class Model {
   }
 
  private:
+  void AppendSpectrum(Buffer<double> spectrum);
+
+  absl::AnyInvocable<void(QImage&) &&> Renderer();
+
   const double sample_rate_;
   const std::size_t fft_window_size_;
   const std::vector<double> frequency_bins_;

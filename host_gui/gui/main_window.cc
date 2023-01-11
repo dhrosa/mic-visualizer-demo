@@ -4,8 +4,6 @@
 #include <absl/strings/str_format.h>
 #include <absl/time/time.h>
 
-#include "diy/coro/task.h"
-
 #include <QLabel>
 #include <QShortcut>
 #include <QStatusBar>
@@ -14,6 +12,7 @@
 #include <thread>
 
 #include "colormap_picker.h"
+#include "diy/coro/task.h"
 #include "image_viewer.h"
 #include "model.h"
 #include "scroll_area.h"
