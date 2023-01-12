@@ -16,10 +16,23 @@ void CheckEven(std::size_t n) {
   }
 }
 
-// Simple rectangular window.
-//
-// TODO(dhrosa): Replace with more general window functions.
-std::vector<double> Window(std::size_t n) { return std::vector<double>(n, 1); }
+Buffer<double> Window(const SpectrumOptions& options) {
+  const std::size_t n = options.window_size;
+  auto window = Buffer<double>::Uninitialized(n);
+
+  switch (options.window_function) {
+    case WindowFunction::kRectangular:
+      std::ranges::fill(window, 1);
+      break;
+    case WindowFunction::kHann:
+      for (int i = 0; i < n; ++i) {
+        const double w = std::sin(std::numbers::pi * i / n);
+        window[i] = w * w;
+      }
+      break;
+  }
+  return window;
+}
 
 double ScaleFactor(std::span<const double> window) {
   double factor = 0;
@@ -133,7 +146,7 @@ std::vector<double> FrequencyBins(std::size_t n, double fs) {
 AsyncGenerator<Buffer<double>> PowerSpectrum(
     SpectrumOptions options, AsyncGenerator<Buffer<std::int16_t>> source) {
   CheckEven(options.window_size);
-  const std::vector<double> window = Window(options.window_size);
+  const Buffer<double> window = Window(options);
   const double psd_scale_factor =
       ScaleFactor(window) / (2 * options.sample_rate);
   const Plan plan = CreatePlan(options.window_size);

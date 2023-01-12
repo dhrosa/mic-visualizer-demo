@@ -8,9 +8,15 @@
 
 std::vector<double> FrequencyBins(std::size_t n, double fs);
 
+enum class WindowFunction {
+  kRectangular,
+  kHann,
+};
+
 struct SpectrumOptions {
   double sample_rate = 24'000;
   std::size_t window_size = 2048;
+  WindowFunction window_function = WindowFunction::kRectangular;
 };
 
 AsyncGenerator<Buffer<double>> PowerSpectrum(

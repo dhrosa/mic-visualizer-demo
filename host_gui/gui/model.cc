@@ -53,9 +53,10 @@ AsyncGenerator<absl::AnyInvocable<void(QImage&) &&>> Model::Run() {
                             .frequency_min = 100,
                             .frequency_max = 5000,
                             .pacing = SimulatedSourcePacing::kRealTime});
-  auto spectra = PowerSpectrum(
-      {.sample_rate = sample_rate_, .window_size = fft_window_size_},
-      std::move(source));
+  auto spectra = PowerSpectrum({.sample_rate = sample_rate_,
+                                .window_size = fft_window_size_,
+                                .window_function = WindowFunction::kHann},
+                               std::move(source));
 
   while (Buffer<double>* spectrum = co_await spectra) {
     AppendSpectrum(std::move(*spectrum));
