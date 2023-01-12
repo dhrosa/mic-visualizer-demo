@@ -32,49 +32,56 @@ AsyncGenerator<Buffer<std::int16_t>> SingleFrameSource(
 }
 
 TEST(SpectrumTest, OddSizeThrowsError) {
-  auto gen = PowerSpectrum(2, 3, SingleFrameSource({0}));
+  auto gen = PowerSpectrum({.sample_rate = 2, .window_size = 3},
+                           SingleFrameSource({0}));
   EXPECT_THROW(Task(gen).Wait(), std::invalid_argument);
 }
 
 TEST(SpectrumTest, Zero) {
-  auto gen = PowerSpectrum(2, 4, SingleFrameSource({0, 0, 0, 0}));
+  auto gen = PowerSpectrum({.sample_rate = 2, .window_size = 4},
+                           SingleFrameSource({0, 0, 0, 0}));
   EXPECT_THAT(Task(gen).Wait(), Pointee(ElementsAre(0, 0, 0)));
   EXPECT_THAT(Task(gen).Wait(), IsNull());
 }
 
 TEST(SpectrumTest, Dc) {
-  auto gen = PowerSpectrum(2, 4, SingleFrameSource({1, 1, 1, 1}));
+  auto gen = PowerSpectrum({.sample_rate = 2, .window_size = 4},
+                           SingleFrameSource({1, 1, 1, 1}));
   EXPECT_THAT(Task(gen).Wait(), Pointee(ElementsAre(1, 0, 0)));
   EXPECT_THAT(Task(gen).Wait(), IsNull());
 }
 
 TEST(SpectrumTest, NyquistRate) {
-  auto gen = PowerSpectrum(2, 4, SingleFrameSource({1, -1, 1, -1}));
+  auto gen = PowerSpectrum({.sample_rate = 2, .window_size = 4},
+                           SingleFrameSource({1, -1, 1, -1}));
   EXPECT_THAT(Task(gen).Wait(), Pointee(ElementsAre(0, 0, 1)));
   EXPECT_THAT(Task(gen).Wait(), IsNull());
 }
 
 TEST(SpectrumTest, DcAndNyquist) {
-  auto gen = PowerSpectrum(2, 4, SingleFrameSource({2, 0, 2, 0}));
+  auto gen = PowerSpectrum({.sample_rate = 2, .window_size = 4},
+                           SingleFrameSource({2, 0, 2, 0}));
   EXPECT_THAT(Task(gen).Wait(), Pointee(ElementsAre(1, 0, 1)));
   EXPECT_THAT(Task(gen).Wait(), IsNull());
 }
 
 TEST(SpectrumTest, Cosine) {
-  auto gen = PowerSpectrum(2, 4, SingleFrameSource({1, 0, -1, 0}));
+  auto gen = PowerSpectrum({.sample_rate = 2, .window_size = 4},
+                           SingleFrameSource({1, 0, -1, 0}));
   EXPECT_THAT(Task(gen).Wait(), Pointee(ElementsAre(0, 0.5, 0)));
   EXPECT_THAT(Task(gen).Wait(), IsNull());
 }
 
 TEST(SpectrumTest, Sine) {
-  auto gen = PowerSpectrum(2, 4, SingleFrameSource({0, 1, 0, -1}));
+  auto gen = PowerSpectrum({.sample_rate = 2, .window_size = 4},
+                           SingleFrameSource({0, 1, 0, -1}));
   EXPECT_THAT(Task(gen).Wait(), Pointee(ElementsAre(0, 0.5, 0)));
   EXPECT_THAT(Task(gen).Wait(), IsNull());
 }
 
 TEST(SpectrumTest, MergesFrames) {
   auto gen = PowerSpectrum(
-      2, 4,
+      {.sample_rate = 2, .window_size = 4},
       Source({{0, 0, 0}, {0, 1}, {1, 1}, {1, 0, 1, 0, -1, 1, -1, 1, -1, 1}}));
   EXPECT_THAT(Task(gen).Wait(), Pointee(ElementsAre(0, 0, 0)));
   EXPECT_THAT(Task(gen).Wait(), Pointee(ElementsAre(1, 0, 0)));
@@ -84,18 +91,21 @@ TEST(SpectrumTest, MergesFrames) {
 }
 
 TEST(SpectrumTest, EmptyInput) {
-  auto gen = PowerSpectrum(2, 4, SingleFrameSource({}));
+  auto gen = PowerSpectrum({.sample_rate = 2, .window_size = 4},
+                           SingleFrameSource({}));
   EXPECT_THAT(Task(gen).Wait(), IsNull());
 }
 
 TEST(SpectrumTest, CleanlyTruncatedInput) {
-  auto gen = PowerSpectrum(2, 4, SingleFrameSource({1, 1, 1, 1}));
+  auto gen = PowerSpectrum({.sample_rate = 2, .window_size = 4},
+                           SingleFrameSource({1, 1, 1, 1}));
   EXPECT_THAT(Task(gen).Wait(), Pointee(ElementsAre(1, 0, 0)));
   EXPECT_THAT(Task(gen).Wait(), IsNull());
 }
 
 TEST(SpectrumTest, TruncatedInput) {
-  auto gen = PowerSpectrum(2, 4, SingleFrameSource({1, 1, 1, 1, 0, 0}));
+  auto gen = PowerSpectrum({.sample_rate = 2, .window_size = 4},
+                           SingleFrameSource({1, 1, 1, 1, 0, 0}));
   EXPECT_THAT(Task(gen).Wait(), Pointee(ElementsAre(1, 0, 0)));
   EXPECT_THAT(Task(gen).Wait(), IsNull());
 }

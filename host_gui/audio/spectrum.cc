@@ -131,14 +131,14 @@ std::vector<double> FrequencyBins(std::size_t n, double fs) {
 }
 
 AsyncGenerator<Buffer<double>> PowerSpectrum(
-    double sample_rate, std::size_t window_size,
-    AsyncGenerator<Buffer<std::int16_t>> source) {
-  CheckEven(window_size);
-  const std::vector<double> window = Window(window_size);
-  const double psd_scale_factor = ScaleFactor(window) / (2 * sample_rate);
-  const Plan plan = CreatePlan(window_size);
+    SpectrumOptions options, AsyncGenerator<Buffer<std::int16_t>> source) {
+  CheckEven(options.window_size);
+  const std::vector<double> window = Window(options.window_size);
+  const double psd_scale_factor =
+      ScaleFactor(window) / (2 * options.sample_rate);
+  const Plan plan = CreatePlan(options.window_size);
 
-  auto chunked_samples = ChunkedSamples(window_size, std::move(source));
+  auto chunked_samples = ChunkedSamples(options.window_size, std::move(source));
   while (std::vector<std::int16_t>* frame = co_await chunked_samples) {
     co_yield SingleFramePowerSpectrum(plan.plan, window, psd_scale_factor,
                                       *frame);

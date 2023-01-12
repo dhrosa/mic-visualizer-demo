@@ -8,6 +8,10 @@
 
 std::vector<double> FrequencyBins(std::size_t n, double fs);
 
+struct SpectrumOptions {
+  double sample_rate = 24'000;
+  std::size_t window_size = 2048;
+};
+
 AsyncGenerator<Buffer<double>> PowerSpectrum(
-    double sample_rate, std::size_t window_size,
-    AsyncGenerator<Buffer<std::int16_t>> source);
+    SpectrumOptions options, AsyncGenerator<Buffer<std::int16_t>> source);
