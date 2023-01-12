@@ -20,6 +20,7 @@ class Model {
   AsyncGenerator<absl::AnyInvocable<void(QImage&) &&>> Run();
 
   double FrequencyBin(std::size_t i) const { return frequency_bins_.at(i); }
+  std::span<const double> FrequencyBins() const { return frequency_bins_; }
 
   absl::Duration TimeDelta(std::int64_t n) const;
 

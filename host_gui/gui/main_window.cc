@@ -89,7 +89,9 @@ void MainWindow::Impl::initStatusBar() {
   status_bar->addPermanentWidget(time_label);
 
   QObject::connect(viewer, &ImageViewer::binHovered, [=, this](QPoint p) {
-    const double f = model.FrequencyBin(p.y());
+    const std::span<const double> bins = model.FrequencyBins();
+    // Flip Y-axis from graphical convention to math convention.
+    const double f = *(bins.rbegin() + p.y());
     frequency_label->setText(
         QString::fromStdString(absl::StrFormat("%.2f Hz", f)));
 

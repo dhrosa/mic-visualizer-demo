@@ -14,7 +14,7 @@
 Model::Model(double sample_rate, std::size_t fft_window_size)
     : sample_rate_(sample_rate),
       fft_window_size_(fft_window_size),
-      frequency_bins_(FrequencyBins(fft_window_size, sample_rate)),
+      frequency_bins_(::FrequencyBins(fft_window_size, sample_rate)),
       data_(768, frequency_bins_.size()) {}
 
 absl::Duration Model::TimeDelta(std::int64_t n) const {
