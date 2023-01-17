@@ -16,6 +16,9 @@ set_source_files_properties(cardinal.o PROPERTIES EXTERNAL_OBJECT true GENERATED
                                                                        true)
 set_target_properties(cardinal PROPERTIES LINKER_LANGUAGE C)
 
+diy_cc_library(chunk AUTO LIBRARIES buffer diy_coro)
+diy_cc_test(chunk_test AUTO LIBRARIES diy_coro)
+
 diy_cc_library(source AUTO LIBRARIES cardinal diy_coro buffer absl::time)
 
 diy_cc_test(source_test AUTO)
