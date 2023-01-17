@@ -66,3 +66,8 @@ TEST(BufferTest, Mutation) {
   EXPECT_THAT(buffer, ElementsAre(4, 5, 6));
   EXPECT_THAT(values, ElementsAre(4, 5, 6));
 }
+
+TEST(BufferTest, Adopt) {
+  auto buffer = AdoptAsBuffer(std::vector<int>({1, 2, 3}));
+  EXPECT_THAT(buffer, ElementsAre(1, 2, 3));
+}

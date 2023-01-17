@@ -42,6 +42,16 @@ class Buffer : public std::ranges::view_interface<Buffer<T>> {
   absl::AnyInvocable<void() &&> cleanup_;
 };
 
+// Convert a contiguous range of values to a Buffer. This is O(1) if the input
+// supports O(1) moves. Requires that the underlying data remains at a fixed
+// memory location after moving the input, e.g. std::vector is supported, but
+// not std::array.
+template <std::ranges::contiguous_range R>
+Buffer<std::ranges::range_value_t<R>> AdoptAsBuffer(R range) {
+  auto span = std::span(range);
+  return Buffer(span, [range = std::move(range)] {});
+}
+
 template <typename T>
 Buffer<T> Buffer<T>::Uninitialized(std::size_t n) noexcept {
   // libc++ doesn't support make_unique_for_overwrite as of 20222/12/8
