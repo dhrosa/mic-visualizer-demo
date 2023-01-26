@@ -15,7 +15,10 @@ Model::Model(double sample_rate, std::size_t fft_window_size)
     : sample_rate_(sample_rate),
       fft_window_size_(fft_window_size),
       frequency_bins_(::FrequencyBins(fft_window_size, sample_rate)),
-      data_(768, frequency_bins_.size()) {}
+      width_(1440),
+      height_(frequency_bins_.size()),
+      spectrum_data_(width_, height_),
+      indexed_data_(width_, height_) {}
 
 absl::Duration Model::TimeDelta(std::int64_t n) const {
   return absl::Seconds(n * fft_window_size_) / sample_rate_;
@@ -27,7 +30,13 @@ void Model::AppendSpectrum(Buffer<double> spectrum) {
     min_value_ = std::min(v, min_value_);
     max_value_ = std::max(v, max_value_);
   });
-  data_.AppendColumn(spectrum);
+  // TODO(dhrosa): Expose a CircularBuffer method to directly write to a new
+  // column.
+  auto indexed = Buffer<std::uint8_t>::Uninitialized(spectrum.size());
+  ToIndexed(spectrum, indexed, min_value_, max_value_);
+
+  spectrum_data_.AppendColumn(spectrum);
+  indexed_data_.AppendColumn(indexed);
 }
 
 absl::AnyInvocable<void(QImage&) &&> Model::Renderer() {
@@ -39,11 +48,11 @@ absl::AnyInvocable<void(QImage&) &&> Model::Renderer() {
     // convention.
     auto dest = EigenView(image).colwise().reverse();
 
-    auto newer = data_.Newer();
-    auto older = data_.Older();
+    auto newer = indexed_data_.Newer();
+    auto older = indexed_data_.Older();
 
-    LutMap(newer, dest.rightCols(newer.cols()), lut, min_value_, max_value_);
-    LutMap(older, dest.leftCols(older.cols()), lut, min_value_, max_value_);
+    LutMap(newer, dest.rightCols(newer.cols()), lut);
+    LutMap(older, dest.leftCols(older.cols()), lut);
   };
 }
 
