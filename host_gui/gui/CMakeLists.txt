@@ -14,9 +14,8 @@ target_include_directories(colormaps PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
 
 diy_cc_library(cursor AUTO LIBRARIES Qt6::Widgets)
 
-diy_cc_library(
-  image_viewer AUTO LIBRARIES Qt6::Widgets cursor absl::any_invocable
-                              absl::synchronization)
+diy_cc_library(image_viewer AUTO LIBRARIES Qt6::Widgets cursor
+                                           absl::synchronization)
 set_property(TARGET image_viewer PROPERTY AUTOMOC ON)
 
 diy_cc_library(scroll_area AUTO LIBRARIES Qt6::Widgets)

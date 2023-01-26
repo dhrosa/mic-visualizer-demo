@@ -34,13 +34,12 @@ QTransform ImageViewer::widgetToLogicalTransform() const {
       static_cast<double>(image_size_.height()) / height());
 }
 
-void ImageViewer::UpdateImage(absl::AnyInvocable<void(QImage&) &&> f) {
-  QImage* image;
-  {
-    absl::MutexLock lock(&mutex_);
-    image = &secondary_;
-  }
-  std::move(f)(*image);
+auto ImageViewer::UpdateImage() -> ScopedUpdate {
+  absl::MutexLock lock(&mutex_);
+  return ScopedUpdate{*this, secondary_};
+}
+
+void ImageViewer::EndUpdateImage() {
   {
     absl::MutexLock lock(&mutex_);
     std::swap(primary_, secondary_);

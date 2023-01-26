@@ -115,7 +115,8 @@ void MainWindow::Impl::UpdateLoop(std::stop_token stop_token) {
       if (stop_token.stop_requested()) {
         co_return;
       }
-      viewer->UpdateImage(std::move(*render));
+      ImageViewer::ScopedUpdate update = viewer->UpdateImage();
+      std::move (*render)(update.image);
     }
   }(stop_token)
                                             .Wait();
