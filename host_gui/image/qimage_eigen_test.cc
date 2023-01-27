@@ -36,6 +36,21 @@ TEST(QImageEigenTest, Read) {
   EXPECT_EQ(view(1, 2), 2222);
 }
 
+TEST(QImageEigenTest, ReadConst) {
+  QImage image(3, 2, QImage::Format_ARGB32);
+  image.setPixel(0, 0, 1111);
+  image.setPixel(2, 1, 2222);
+
+  QImage image_copy = image;
+
+  auto view = EigenView(std::as_const(image));
+  EXPECT_EQ(view(0, 0), 1111);
+  EXPECT_EQ(view(1, 2), 2222);
+
+  // Creating a const view should not have triggered a copy-on-write detach.
+  EXPECT_EQ(image.constBits(), image_copy.constBits());
+}
+
 TEST(QImageEigenTest, Write) {
   QImage image(3, 2, QImage::Format_ARGB32);
 
