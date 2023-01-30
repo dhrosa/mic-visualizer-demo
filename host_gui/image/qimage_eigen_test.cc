@@ -3,9 +3,9 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include <span>
+using testing::ElementsAre;
 
-TEST(QImageEigenTest, Dimensions) {
+TEST(EigenViewTest, Dimensions) {
   QImage image(3, 2, QImage::Format_ARGB32);
   auto view = EigenView(image);
   EXPECT_EQ(view.cols(), 3);
@@ -15,7 +15,7 @@ TEST(QImageEigenTest, Dimensions) {
   static_assert(std::same_as<std::uint32_t, decltype(view)::Scalar>);
 }
 
-TEST(QImageEigenTest, ScanLinesMatch) {
+TEST(EigenViewTest, ScanLinesMatch) {
   QImage image(3, 2, QImage::Format_ARGB32);
   auto view = EigenView(image);
 
@@ -26,7 +26,7 @@ TEST(QImageEigenTest, ScanLinesMatch) {
             view.row(1).data());
 }
 
-TEST(QImageEigenTest, Read) {
+TEST(EigenViewTest, Read) {
   QImage image(3, 2, QImage::Format_ARGB32);
   image.setPixel(0, 0, 1111);
   image.setPixel(2, 1, 2222);
@@ -36,7 +36,32 @@ TEST(QImageEigenTest, Read) {
   EXPECT_EQ(view(1, 2), 2222);
 }
 
-TEST(QImageEigenTest, ReadConst) {
+TEST(EigenViewTest, Read8) {
+  QImage image(2, 2, QImage::Format_ARGB32);
+  image.setPixel(0, 0, 0x03'02'01'00);
+  image.setPixel(1, 0, 0x07'06'05'04);
+  image.setPixel(0, 1, 0x0B'0A'09'08);
+  image.setPixel(1, 1, 0x0F'0E'0D'0C);
+
+  auto view = EigenView8(image);
+  EXPECT_THAT(view.row(0), ElementsAre(0, 1, 2, 3, 4, 5, 6, 7));
+  EXPECT_THAT(view.row(1), ElementsAre(8, 9, 10, 11, 12, 13, 14, 15));
+}
+
+TEST(EigenViewTest, Write8) {
+  QImage image(2, 2, QImage::Format_ARGB32);
+
+  auto view = EigenView8(image);
+  view.row(0) << 0, 1, 2, 3, 4, 5, 6, 7;
+  view.row(1) << 8, 9, 10, 11, 12, 13, 14, 15;
+
+  EXPECT_EQ(image.pixel(0, 0), 0x03'02'01'00);
+  EXPECT_EQ(image.pixel(1, 0), 0x07'06'05'04);
+  EXPECT_EQ(image.pixel(0, 1), 0x0B'0A'09'08);
+  EXPECT_EQ(image.pixel(1, 1), 0x0F'0E'0D'0C);
+}
+
+TEST(EigenViewTest, ReadConst) {
   QImage image(3, 2, QImage::Format_ARGB32);
   image.setPixel(0, 0, 1111);
   image.setPixel(2, 1, 2222);
@@ -51,7 +76,7 @@ TEST(QImageEigenTest, ReadConst) {
   EXPECT_EQ(image.constBits(), image_copy.constBits());
 }
 
-TEST(QImageEigenTest, Write) {
+TEST(EigenViewTest, Write) {
   QImage image(3, 2, QImage::Format_ARGB32);
 
   auto view = EigenView(image);

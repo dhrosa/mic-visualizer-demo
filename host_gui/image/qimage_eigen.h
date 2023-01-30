@@ -33,3 +33,21 @@ inline auto EigenView(IsQImageReference auto&& image) {
   return MapType(data, rows, cols,
                  OuterStride<>(image.bytesPerLine() / sizeof(std::uint32_t)));
 }
+
+// Eigen-compatible const uint8 view of QImage
+auto EigenView8(const QImage& image) {
+  using namespace Eigen;
+  using ArrayType = const Array<std::uint8_t, Dynamic, Dynamic, RowMajor>;
+  return Map<ArrayType, Unaligned, OuterStride<>>(
+      image.constBits(), image.height(), 4 * image.width(),
+      OuterStride<>(image.bytesPerLine()));
+}
+
+// Eigen-compatible mutable uint8 view of QImage
+auto EigenView8(QImage& image) {
+  using namespace Eigen;
+  using ArrayType = Array<std::uint8_t, Dynamic, Dynamic, RowMajor>;
+  return Map<ArrayType, Unaligned, OuterStride<>>(
+      image.bits(), image.height(), 4 * image.width(),
+      OuterStride<>(image.bytesPerLine()));
+}
