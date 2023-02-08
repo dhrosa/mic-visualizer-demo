@@ -93,6 +93,9 @@ else()
   message(STATUS "OpenMP disabled.")
 endif()
 
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+include(Diy)
+
 include_directories(.)
 
 add_subdirectory(diy)
