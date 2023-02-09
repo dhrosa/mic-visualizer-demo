@@ -10,23 +10,10 @@
 constexpr std::size_t kWidth = 2;
 constexpr std::size_t kHeight = 2;
 
-using testing::Optional;
-
-std::optional<std::uint32_t> NextValue(auto& gen) {
-  QImage* image = Task(gen).Wait();
-  if (image == nullptr) {
-    return std::nullopt;
-  }
-  return image->pixel(0, 0);
-}
-
-std::vector<std::uint32_t> FrameValues(AsyncGenerator<QImage> frames) {
-  std::vector<std::uint32_t> values;
-  while (QImage* image = Task(frames).Wait()) {
-    values.push_back(image->pixel(0, 0));
-  }
-  return values;
-}
+using testing::ElementsAre;
+using testing::IsEmpty;
+using testing::IsNull;
+using testing::Pointee;
 
 QImage FilledImage(std::uint32_t value) {
   QImage image(kWidth, kHeight, QImage::Format_ARGB32);
@@ -34,16 +21,20 @@ QImage FilledImage(std::uint32_t value) {
   return image;
 }
 
+std::uint32_t Value(const QImage& image) { return image.pixel(0, 0); }
+
 TEST(InterpolateTest, EmptyInput) {
   auto gen = Interpolate(std::vector<QImage>(), Rational{1, 1}, Rational{1, 1});
-  EXPECT_THAT(NextValue(gen), std::nullopt);
+  EXPECT_THAT(gen.ToVector(), IsEmpty());
 }
 
 // At least two frames are needed for interpolation.
 TEST(InterpolateTest, SingleFrame) {
-  auto gen = Interpolate(std::vector<QImage>({FilledImage(0)}), Rational{1, 1},
-                         Rational{1, 1});
-  EXPECT_THAT(NextValue(gen), std::nullopt);
+  std::vector<QImage> source = {
+      FilledImage(0),
+  };
+  auto gen = Interpolate(source, Rational{1, 1}, Rational{1, 1});
+  EXPECT_THAT(gen.ToVector(), IsEmpty());
 }
 
 TEST(InterpolateTest, Blend50) {
@@ -52,9 +43,6 @@ TEST(InterpolateTest, Blend50) {
       FilledImage(200),
       FilledImage(250),
   };
-  auto gen = Interpolate(source, {1, 1}, {1, 2});
-  EXPECT_THAT(NextValue(gen), Optional(100));
-  EXPECT_THAT(NextValue(gen), Optional(150));
-  EXPECT_THAT(NextValue(gen), Optional(200));
-  EXPECT_THAT(NextValue(gen), Optional(225));
+  EXPECT_THAT(Interpolate(source, {1, 1}, {1, 2}).Map(Value).ToVector(),
+              ElementsAre(100, 150, 200, 225, 250));
 }

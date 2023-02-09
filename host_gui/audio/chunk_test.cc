@@ -11,15 +11,10 @@ using testing::ElementsAre;
 using testing::IsNull;
 using testing::Pointee;
 
-auto* NextValue(auto& gen) { return Task(gen).Wait(); }
-
 template <typename... Args>
 testing::Matcher<AsyncGenerator<std::vector<int>>> OutputFramesAre(
     Args&&... matchers) {
-  auto output_frames = [](AsyncGenerator<std::vector<int>> generator) {
-    auto range = generator.ToSyncRange();
-    return std::vector(range.begin(), range.end());
-  };
+  auto output_frames = [](auto& gen) { return gen.ToVector(); };
   return testing::ResultOf("output frames", output_frames,
                            ElementsAre(std::forward<Args>(matchers)...));
 }
@@ -27,7 +22,7 @@ testing::Matcher<AsyncGenerator<std::vector<int>>> OutputFramesAre(
 TEST(ChunkTest, Empty) {
   auto chunked =
       Chunked([]() -> AsyncGenerator<std::vector<int>> { co_return; }(), 3);
-  EXPECT_THAT(NextValue(chunked), IsNull());
+  EXPECT_THAT(chunked.Wait(), IsNull());
 }
 
 TEST(ChunkTest, TruncatedInputIntraFrame) {
@@ -36,8 +31,8 @@ TEST(ChunkTest, TruncatedInputIntraFrame) {
     co_yield {4, 5};
   };
   auto chunked = Chunked(source(), 3);
-  EXPECT_THAT(NextValue(chunked), Pointee(ElementsAre(1, 2, 3)));
-  EXPECT_THAT(NextValue(chunked), IsNull());
+  EXPECT_THAT(chunked.Wait(), Pointee(ElementsAre(1, 2, 3)));
+  EXPECT_THAT(chunked.Wait(), IsNull());
 }
 
 TEST(ChunkTest, TruncatedInputInterFrame) {
@@ -45,8 +40,8 @@ TEST(ChunkTest, TruncatedInputInterFrame) {
     co_yield {1, 2, 3};
   };
   auto chunked = Chunked(source(), 3);
-  EXPECT_THAT(NextValue(chunked), Pointee(ElementsAre(1, 2, 3)));
-  EXPECT_THAT(NextValue(chunked), IsNull());
+  EXPECT_THAT(chunked.Wait(), Pointee(ElementsAre(1, 2, 3)));
+  EXPECT_THAT(chunked.Wait(), IsNull());
 }
 
 TEST(ChunkTest, MergesSmallFrames) {
@@ -59,8 +54,8 @@ TEST(ChunkTest, MergesSmallFrames) {
     co_yield {6};
   };
   auto chunked = Chunked(source(), 3);
-  EXPECT_THAT(NextValue(chunked), Pointee(ElementsAre(1, 2, 3)));
-  EXPECT_THAT(NextValue(chunked), Pointee(ElementsAre(4, 5, 6)));
+  EXPECT_THAT(chunked.Wait(), Pointee(ElementsAre(1, 2, 3)));
+  EXPECT_THAT(chunked.Wait(), Pointee(ElementsAre(4, 5, 6)));
 }
 
 TEST(ChunkTest, SplitsLargeFrames) {
@@ -68,8 +63,8 @@ TEST(ChunkTest, SplitsLargeFrames) {
     co_yield {1, 2, 3, 4, 5, 6};
   };
   auto chunked = Chunked(source(), 3);
-  EXPECT_THAT(NextValue(chunked), Pointee(ElementsAre(1, 2, 3)));
-  EXPECT_THAT(NextValue(chunked), Pointee(ElementsAre(4, 5, 6)));
+  EXPECT_THAT(chunked.Wait(), Pointee(ElementsAre(1, 2, 3)));
+  EXPECT_THAT(chunked.Wait(), Pointee(ElementsAre(4, 5, 6)));
 }
 
 // This case requires combining data from separate input frames and also using
@@ -80,6 +75,6 @@ TEST(ChunkTest, UnalignedFrames) {
     co_yield {5, 6, 7, 8};
   };
   auto chunked = Chunked(source(), 3);
-  EXPECT_THAT(NextValue(chunked), Pointee(ElementsAre(1, 2, 3)));
-  EXPECT_THAT(NextValue(chunked), Pointee(ElementsAre(4, 5, 6)));
+  EXPECT_THAT(chunked.Wait(), Pointee(ElementsAre(1, 2, 3)));
+  EXPECT_THAT(chunked.Wait(), Pointee(ElementsAre(4, 5, 6)));
 }
