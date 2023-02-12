@@ -29,7 +29,7 @@ QImage Blend(double t, const QImage& image_a, const QImage& image_b) {
 AsyncGenerator<QImage> Interpolate(AsyncGenerator<QImage> source,
                                    Rational input_timebase,
                                    Rational output_timebase) {
-  if (input_timebase.ToReal() < output_timebase.ToReal()) {
+  if (double(input_timebase) < double(output_timebase)) {
     throw std::logic_error(
         "Input timebase is finer resolution than output timebase.");
   }
@@ -46,15 +46,15 @@ AsyncGenerator<QImage> Interpolate(AsyncGenerator<QImage> source,
   std::int64_t output_frame_number = 0;
   for (std::int64_t input_frame_number = 0;; ++input_frame_number) {
     const double input_start_timestamp =
-        (input_timebase * input_frame_number).ToReal();
+        static_cast<double>(input_timebase * input_frame_number);
     const double input_end_timestamp =
-        (input_timebase * (input_frame_number + 1)).ToReal();
+        static_cast<double>(input_timebase * (input_frame_number + 1));
     const double input_duration = input_end_timestamp - input_start_timestamp;
     // Produce as many output frames from the current set of input frames as
     // possible.
     for (;; ++output_frame_number) {
       const double output_start_timestamp =
-          (output_timebase * output_frame_number).ToReal();
+          static_cast<double>(output_timebase * output_frame_number);
       if (output_start_timestamp > input_end_timestamp) {
         break;
       }

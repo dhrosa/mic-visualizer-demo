@@ -13,6 +13,6 @@ diy_cc_binary(
   lut_benchmark AUTO LIBRARIES lut Qt6::Gui eigen benchmark::benchmark
                                benchmark::benchmark_main)
 
-diy_cc_library(interpolate AUTO LIBRARIES diy_coro Qt6::Gui absl::time
+diy_cc_library(interpolate AUTO LIBRARIES diy_coro Qt6::Gui absl::time rational
                                           qimage_eigen)
 diy_cc_test(interpolate_test AUTO)
