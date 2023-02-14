@@ -20,3 +20,6 @@ diy_cc_test(interpolate_test AUTO)
 diy_cc_library(frame_scheduler AUTO LIBRARIES rational diy_coro Qt6::Gui
                                               absl::time)
 diy_cc_test(frame_scheduler_test AUTO)
+
+diy_cc_library(qimage_aligned AUTO LIBRARIES Qt6::Gui)
+diy_cc_test(qimage_aligned_test AUTO)
