@@ -16,3 +16,7 @@ diy_cc_binary(
 diy_cc_library(interpolate AUTO LIBRARIES diy_coro Qt6::Gui absl::time rational
                                           qimage_eigen)
 diy_cc_test(interpolate_test AUTO)
+
+diy_cc_library(frame_scheduler AUTO LIBRARIES rational diy_coro Qt6::Gui
+                                              absl::time)
+diy_cc_test(frame_scheduler_test AUTO)
