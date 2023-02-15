@@ -10,11 +10,19 @@
 #include "colormaps.h"
 #include "diy/buffer.h"
 #include "diy/coro/async_generator.h"
+#include "diy/rational.h"
 #include "image/circular_buffer.h"
 
 class Model {
  public:
-  Model(double sample_rate = 24'000, std::size_t fft_window_size = 2048);
+  struct Options {
+    double sample_rate = 24'000;
+    std::size_t fft_window_size = 2028;
+    Rational refresh_rate = {60, 1};
+  };
+
+  Model();
+  Model(const Options& options);
 
   AsyncGenerator<QImage> Run();
 
@@ -32,6 +40,7 @@ class Model {
 
   const double sample_rate_;
   const std::size_t fft_window_size_;
+  const Rational refresh_rate_;
   const std::vector<double> frequency_bins_;
   const std::size_t width_;
   const std::size_t height_;

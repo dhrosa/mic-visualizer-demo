@@ -11,10 +11,13 @@
 #include "image/lut.h"
 #include "image/qimage_eigen.h"
 
-Model::Model(double sample_rate, std::size_t fft_window_size)
-    : sample_rate_(sample_rate),
-      fft_window_size_(fft_window_size),
-      frequency_bins_(::FrequencyBins(fft_window_size, sample_rate)),
+Model::Model() : Model(Options()) {}
+
+Model::Model(const Options& options)
+    : sample_rate_(options.sample_rate),
+      fft_window_size_(options.fft_window_size),
+      refresh_rate_(options.refresh_rate),
+      frequency_bins_(::FrequencyBins(fft_window_size_, sample_rate_)),
       width_(1440),
       height_(frequency_bins_.size()),
       spectrum_data_(width_, height_),

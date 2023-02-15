@@ -4,7 +4,9 @@
 #include <absl/strings/str_format.h>
 #include <absl/time/time.h>
 
+#include <QGuiApplication>
 #include <QLabel>
+#include <QScreen>
 #include <QShortcut>
 #include <QStatusBar>
 #include <QToolBar>
@@ -13,9 +15,17 @@
 
 #include "colormap_picker.h"
 #include "diy/coro/task.h"
+#include "diy/rational.h"
 #include "image_viewer.h"
 #include "model.h"
 #include "scroll_area.h"
+
+namespace {
+Rational DefaultRefreshRate() {
+  const double refresh_rate = QGuiApplication::primaryScreen()->refreshRate();
+  return static_cast<int>(refresh_rate) * Rational{1, 1};
+}
+}  // namespace
 
 struct MainWindow::Impl {
   Impl(MainWindow* window);
@@ -37,7 +47,8 @@ struct MainWindow::Impl {
   std::jthread update_thread;
 };
 
-MainWindow::Impl::Impl(MainWindow* window) : window(window) {
+MainWindow::Impl::Impl(MainWindow* window)
+    : window(window), model({.refresh_rate = DefaultRefreshRate()}) {
   initViewer();
   initToolBar();
   initStatusBar();

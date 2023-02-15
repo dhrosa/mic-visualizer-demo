@@ -45,6 +45,7 @@ diy_cc_library(
             absl::str_format
             absl::time
             model
+            rational
             image_viewer
             colormap_picker
             scroll_area)
