@@ -1,6 +1,5 @@
 #pragma once
 
-#include <absl/functional/any_invocable.h>
 #include <absl/time/time.h>
 
 #include <QImage>
@@ -17,7 +16,7 @@ class Model {
  public:
   Model(double sample_rate = 24'000, std::size_t fft_window_size = 2048);
 
-  AsyncGenerator<absl::AnyInvocable<void(QImage&) &&>> Run();
+  AsyncGenerator<QImage> Run();
 
   double FrequencyBin(std::size_t i) const { return frequency_bins_.at(i); }
   std::span<const double> FrequencyBins() const { return frequency_bins_; }
@@ -29,7 +28,7 @@ class Model {
  private:
   void AppendSpectrum(Buffer<double> spectrum);
 
-  absl::AnyInvocable<void(QImage&) &&> Renderer();
+  QImage Render();
 
   const double sample_rate_;
   const std::size_t fft_window_size_;

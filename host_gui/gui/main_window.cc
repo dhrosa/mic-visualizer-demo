@@ -111,12 +111,12 @@ void MainWindow::Impl::initShortcuts() {
 void MainWindow::Impl::UpdateLoop(std::stop_token stop_token) {
   [this](std::stop_token stop_token) -> Task<> {
     auto frames = model.Run();
-    while (auto* render = co_await frames) {
+    while (QImage* frame = co_await frames) {
       if (stop_token.stop_requested()) {
         co_return;
       }
       ImageViewer::ScopedUpdate update = viewer->UpdateImage();
-      std::move (*render)(update.image);
+      update.image = std::move(*frame);
     }
   }(stop_token)
                                             .Wait();

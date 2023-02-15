@@ -39,24 +39,24 @@ void Model::AppendSpectrum(Buffer<double> spectrum) {
   indexed_data_.AppendColumn(indexed);
 }
 
-absl::AnyInvocable<void(QImage&) &&> Model::Renderer() {
-  return [&](QImage& image) {
-    auto lut = active_colormap_->entries;
+QImage Model::Render() {
+  QImage image(imageSize(), QImage::Format_RGB32);
+  auto lut = active_colormap_->entries;
 
-    // We render the data upside-down so that higher frequencies are on the
-    // top. Note: our image has the opposite orientation compared to Eigen
-    // convention.
-    auto dest = EigenView(image).colwise().reverse();
+  // We render the data upside-down so that higher frequencies are on the
+  // top. Note: our image has the opposite orientation compared to Eigen
+  // convention.
+  auto dest = EigenView(image).colwise().reverse();
 
-    auto newer = indexed_data_.Newer();
-    auto older = indexed_data_.Older();
+  auto newer = indexed_data_.Newer();
+  auto older = indexed_data_.Older();
 
-    LutMap(newer, dest.rightCols(newer.cols()), lut);
-    LutMap(older, dest.leftCols(older.cols()), lut);
-  };
+  LutMap(newer, dest.rightCols(newer.cols()), lut);
+  LutMap(older, dest.leftCols(older.cols()), lut);
+  return image;
 }
 
-AsyncGenerator<absl::AnyInvocable<void(QImage&) &&>> Model::Run() {
+AsyncGenerator<QImage> Model::Run() {
   auto source = RampSource({.sample_rate = sample_rate_,
                             .ramp_period = absl::Seconds(10),
                             .frequency_min = 100,
@@ -69,6 +69,6 @@ AsyncGenerator<absl::AnyInvocable<void(QImage&) &&>> Model::Run() {
 
   while (Buffer<double>* spectrum = co_await spectra) {
     AppendSpectrum(std::move(*spectrum));
-    co_yield Renderer();
+    co_yield Render();
   }
 }
