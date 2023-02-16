@@ -21,6 +21,8 @@ struct Rational {
   bool operator==(Rational other) const {
     return numerator == other.numerator && denominator == other.denominator;
   }
+
+  Rational reciprocal() const { return {denominator, numerator}; }
 };
 
 inline Rational operator*(std::integral auto scale, Rational r) {

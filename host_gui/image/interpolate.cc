@@ -2,6 +2,7 @@
 
 #include <cassert>
 #include <deque>
+#include <sstream>
 
 #include "diy/coro/task.h"
 #include "qimage_eigen.h"
@@ -30,8 +31,10 @@ AsyncGenerator<QImage> Interpolate(AsyncGenerator<QImage> source,
                                    Rational input_timebase,
                                    Rational output_timebase) {
   if (double(input_timebase) < double(output_timebase)) {
-    throw std::logic_error(
-        "Input timebase is finer resolution than output timebase.");
+    std::stringstream message;
+    message << "Input timebase " << input_timebase
+            << " is finer resolution than output timebase " << output_timebase;
+    throw std::logic_error(message.str());
   }
   // Input frames N and N+1.
   QImage input_frames[2];

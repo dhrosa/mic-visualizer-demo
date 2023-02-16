@@ -22,8 +22,7 @@ diy_cc_library(scroll_area AUTO LIBRARIES Qt6::Widgets)
 
 diy_cc_library(
   model AUTO
-  LIBRARIES absl::any_invocable
-            absl::time
+  LIBRARIES absl::time
             diy_coro
             circular_buffer
             Qt6::Gui
@@ -31,7 +30,10 @@ diy_cc_library(
             spectrum
             colormaps
             absl::time
+            interpolate
             qimage_eigen
+            frame_scheduler
+            absl::log
             lut)
 
 diy_cc_test(model_test AUTO)

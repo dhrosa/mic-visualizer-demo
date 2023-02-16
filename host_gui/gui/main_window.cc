@@ -21,9 +21,10 @@
 #include "scroll_area.h"
 
 namespace {
-Rational DefaultRefreshRate() {
+Rational DefaultRefreshPeriod() {
   const double refresh_rate = QGuiApplication::primaryScreen()->refreshRate();
-  return static_cast<int>(refresh_rate) * Rational{1, 1};
+  LOG(INFO) << "Primary screen refresh rate: " << refresh_rate;
+  return Rational{1, static_cast<int>(refresh_rate)};
 }
 }  // namespace
 
@@ -48,7 +49,7 @@ struct MainWindow::Impl {
 };
 
 MainWindow::Impl::Impl(MainWindow* window)
-    : window(window), model({.refresh_rate = DefaultRefreshRate()}) {
+    : window(window), model({.refresh_period = DefaultRefreshPeriod()}) {
   initViewer();
   initToolBar();
   initStatusBar();

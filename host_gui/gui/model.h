@@ -18,7 +18,7 @@ class Model {
   struct Options {
     double sample_rate = 24'000;
     std::size_t fft_window_size = 2028;
-    Rational refresh_rate = {60, 1};
+    Rational refresh_period = {1, 60};
   };
 
   Model();
@@ -40,7 +40,7 @@ class Model {
 
   const double sample_rate_;
   const std::size_t fft_window_size_;
-  const Rational refresh_rate_;
+  const Rational refresh_period_;
   const std::vector<double> frequency_bins_;
   const std::size_t width_;
   const std::size_t height_;

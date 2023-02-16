@@ -8,6 +8,9 @@
 
 #include "audio/source.h"
 #include "audio/spectrum.h"
+#include "diy/coro/executor.h"
+#include "image/frame_scheduler.h"
+#include "image/interpolate.h"
 #include "image/lut.h"
 #include "image/qimage_eigen.h"
 
@@ -16,7 +19,7 @@ Model::Model() : Model(Options()) {}
 Model::Model(const Options& options)
     : sample_rate_(options.sample_rate),
       fft_window_size_(options.fft_window_size),
-      refresh_rate_(options.refresh_rate),
+      refresh_period_(options.refresh_period),
       frequency_bins_(::FrequencyBins(fft_window_size_, sample_rate_)),
       width_(1440),
       height_(frequency_bins_.size()),
@@ -59,6 +62,21 @@ QImage Model::Render() {
   return image;
 }
 
+namespace {
+AsyncGenerator<QImage> PacedFrames(Rational refresh_rate,
+                                   AsyncGenerator<QImage> frames) {
+  FrameScheduler scheduler(refresh_rate);
+  SerialExecutor executor;
+  while (QImage* frame = co_await frames) {
+    const absl::Time arrival_time = absl::Now();
+    const absl::Time render_time = scheduler.Schedule(arrival_time);
+    co_await executor.Sleep(render_time);
+    co_yield std::move(*frame);
+  }
+}
+
+}  // namespace
+
 AsyncGenerator<QImage> Model::Run() {
   auto source = RampSource({.sample_rate = sample_rate_,
                             .ramp_period = absl::Seconds(10),
@@ -69,9 +87,21 @@ AsyncGenerator<QImage> Model::Run() {
                                 .window_size = fft_window_size_,
                                 .window_function = WindowFunction::kHann},
                                std::move(source));
+  const Rational source_frame_period = {
+      static_cast<std::int64_t>(fft_window_size_),
+      static_cast<std::int64_t>(sample_rate_)};
+  auto rendered =
+      [this](AsyncGenerator<Buffer<double>> spectra) -> AsyncGenerator<QImage> {
+    while (Buffer<double>* spectrum = co_await spectra) {
+      AppendSpectrum(std::move(*spectrum));
+      co_yield Render();
+    }
+  }(std::move(spectra));
 
-  while (Buffer<double>* spectrum = co_await spectra) {
-    AppendSpectrum(std::move(*spectrum));
-    co_yield Render();
-  }
+  auto interpolated =
+      Interpolate(std::move(rendered), source_frame_period, refresh_period_);
+
+  auto paced = PacedFrames(refresh_period_, std::move(interpolated));
+
+  return std::move(paced);
 }
