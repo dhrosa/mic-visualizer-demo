@@ -90,13 +90,10 @@ AsyncGenerator<QImage> Model::Run() {
   const Rational source_frame_period = {
       static_cast<std::int64_t>(fft_window_size_),
       static_cast<std::int64_t>(sample_rate_)};
-  auto rendered =
-      [this](AsyncGenerator<Buffer<double>> spectra) -> AsyncGenerator<QImage> {
-    while (Buffer<double>* spectrum = co_await spectra) {
-      AppendSpectrum(std::move(*spectrum));
-      co_yield Render();
-    }
-  }(std::move(spectra));
+  auto rendered = std::move(spectra).Map([this](Buffer<double> spectrum) {
+    AppendSpectrum(std::move(spectrum));
+    return Render();
+  });
 
   auto interpolated =
       Interpolate(std::move(rendered), source_frame_period, refresh_period_);
